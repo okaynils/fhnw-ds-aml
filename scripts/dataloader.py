@@ -1,9 +1,11 @@
 import pandas as pd
 import os
+import json
 
 class DataLoader:
-    def __init__(self, base_path='data'):
+    def __init__(self, base_path='data', translations_name=None):
         self.base_path = base_path
+        self.translations = self.load_translations(path=f'{base_path}/{translations_name}') if translations_name else None
 
     def load_csv(self, file_name, sep=';', parse_dates=None):
         path = os.path.join(self.base_path, f"{file_name}.csv")
@@ -17,7 +19,27 @@ class DataLoader:
             for column in parse_dates:
                 df[column] = pd.to_datetime(df[column], errors='coerce')
 
+        if self.translations:
+            self.apply_translations(df, file_name)
+
         return df
+    
+    def load_translations(self, path):
+        if path and os.path.exists(path):
+            with open(path, 'r') as file:
+                return json.load(file)
+        else: 
+            print(f'Translation File {path} not found!')
+        return None
+
+    def apply_translations(self, df, dataset_name):
+        if dataset_name in self.translations:
+            dataset_translations = self.translations[dataset_name]
+            for variable, mapping in dataset_translations.items():
+                if variable in df.columns:
+                    df[variable] = df[variable].map(mapping).fillna(df[variable])
+                    print(f'Mapped {variable} -> {mapping}')
+
 
     def list_datasets(self):
         files = os.listdir(self.base_path)

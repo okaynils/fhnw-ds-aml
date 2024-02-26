@@ -1,0 +1,39 @@
+{
+  "account": {
+    "frequency": {
+      "POPLATEK MESICNE": "MONTHLY CHARGES",
+      "POPLATEK TYDNE": "WEEKLY CHARGES",
+      "POPLATEK PO OBRATU": "TRANSACTION CHARGES"
+    }
+  },
+  "transaction": {
+    "type": {
+      "PRIJEM": "CREDIT",
+      "VYDAJ": "WITHDRAWAL"
+    },
+    "operation": {
+      "VYBER KARTOU": "CREDIT CARD WITHDRAWAL",
+      "VKLAD": "CREDIT IN CASH",
+      "PREVOD Z UCTU": "COLLECTION FROM ANOTHER BANK",
+      "VYBER": "WITHDRAWAL IN CASH",
+      "PREVOD NA UCET": "REMITTANCE TO ANOTHER BANK"
+    },
+    "k_symbol": {
+      "POJISTNE": "INSURANCE PAYMENT",
+      "SLUZBY": "PAYMENT FOR STATEMENT",
+      "UROK": "INTEREST CREDITED",
+      "SANKC. UROK": "SANCTION INTEREST IF NEGATIVE BALANCE",
+      "SIPO": "HOUSEHOLD",
+      "DUCHOD": "OLD-AGE PENSION",
+      "UVER": "LOAN PAYMENT"
+    }
+  },
+  "loan": {
+    "status": {
+      "A": "contract finished, no problems",
+      "B": "contract finished, loan not payed",
+      "C": "running contract, OK so far",
+      "D": "running contract, client in debt"
+    }
+  }
+}
