@@ -9,14 +9,15 @@ class DataLoader:
 
     def load_csv(self, file_name, sep=';', parse_dates=None):
         path = os.path.join(self.base_path, f"{file_name}.csv")
-
-        df = pd.read_csv(path, sep=sep)
+        df = pd.read_csv(path, sep=sep, low_memory=False)
 
         if isinstance(parse_dates, dict):
             for column, fmt in parse_dates.items():
-                df[column] = pd.to_datetime(df[column], format=fmt)
+                df[column] = df[column].astype(str).apply(lambda x: x.split(' ')[0])
+                df[column] = pd.to_datetime(df[column], format=fmt, errors='coerce')
         elif parse_dates is not None:
             for column in parse_dates:
+                df[column] = df[column].astype(str).apply(lambda x: x.split(' ')[0])
                 df[column] = pd.to_datetime(df[column], errors='coerce')
 
         if self.translations:
@@ -37,13 +38,20 @@ class DataLoader:
             dataset_translations = self.translations[dataset_name]
             for variable, mapping in dataset_translations.items():
                 if variable in df.columns:
-                    df[variable] = df[variable].map(mapping).fillna(df[variable])
-                    print(f'Mapped {variable} -> {mapping}')
+                    df[variable] = df[variable].map(mapping)
+                    print(f'Mapped {variable}:')
+                    print(json.dumps(mapping, indent=4))
 
 
-    def list_datasets(self):
+    def list_datasets(self, index=False):
         files = os.listdir(self.base_path)
-        return [file.split('.')[0] for file in files if file.endswith('.csv')]
+
+        df = pd.DataFrame({
+            'Dataset': [file.split('.')[0] for file in files if file.endswith('.csv')],
+            'Number of Rows': [pd.read_csv(os.path.join(self.base_path, file)).shape[0] for file in files if file.endswith('.csv')]
+            })
+
+        return df
 
     def preprocess_data(self, df, preprocessing_steps=None):
         if preprocessing_steps is not None:

@@ -6,7 +6,7 @@
       "POPLATEK PO OBRATU": "TRANSACTION CHARGES"
     }
   },
-  "transaction": {
+  "trans": {
     "type": {
       "PRIJEM": "CREDIT",
       "VYDAJ": "WITHDRAWAL"
@@ -25,6 +25,14 @@
       "SANKC. UROK": "SANCTION INTEREST IF NEGATIVE BALANCE",
       "SIPO": "HOUSEHOLD",
       "DUCHOD": "OLD-AGE PENSION",
+      "UVER": "LOAN PAYMENT"
+    }
+  },
+  "order": {
+    "k_symbol": {
+      "POJISTNE": "INSURANCE PAYMENT",
+      "SIPO": "HOUSEHOLD",
+      "LEASING": "LEASING",
       "UVER": "LOAN PAYMENT"
     }
   },
