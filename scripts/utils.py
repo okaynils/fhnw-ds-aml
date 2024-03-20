@@ -23,3 +23,18 @@ def add_prefix_except_id(df, prefix, id_exceptions=[]):
     ]
     
     return new_df
+
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class DateToUnixTimestampTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        pass
+
+    def fit(self, X, y=None):
+        return self  # nothing to fit
+
+    def transform(self, X, y=None):
+        # Assuming 'Date' is the column to be transformed
+        X_transformed = X.copy()
+        X_transformed['Date'] = X_transformed['Date'].astype('int64') // 10**9
+        return X_transformed
