@@ -1,4 +1,8 @@
 import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
 
 def add_prefix_except_id(df, prefix, id_exceptions=[]):
     """
@@ -38,3 +42,34 @@ class DateToUnixTimestampTransformer(BaseEstimator, TransformerMixin):
         X_transformed = X.copy()
         X_transformed['Date'] = X_transformed['Date'].astype('int64') // 10**9
         return X_transformed
+
+def create_pipeline(categorical_features, numerical_features, estimator: BaseEstimator):
+    """
+    Creates a pipeline with specified categorical and numerical features.
+    
+    Parameters:
+    - categorical_features: list of strings, names of the categorical columns
+    - numerical_features: list of strings, names of the numerical columns
+    
+    Returns:
+    - A Scikit-Learn Pipeline object configured for the specified features.
+    """
+    categorical_preprocessor = Pipeline(steps=[
+        ('onehot', OneHotEncoder(drop='first'))
+    ])
+    
+    numerical_preprocessor = Pipeline(steps=[
+        ('scaler', StandardScaler())
+    ])
+    
+    preprocessor = ColumnTransformer(transformers=[
+        ('cats', categorical_preprocessor, categorical_features),
+        ('nums', numerical_preprocessor, numerical_features)
+    ], remainder='passthrough')
+    
+    pipeline = Pipeline(steps=[
+        ('preprocessing', preprocessor),
+        ('model', estimator)
+    ])
+    
+    return pipeline
