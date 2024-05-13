@@ -3,6 +3,12 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.linear_model import LogisticRegression
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scikitplot as skplt
+from sklearn.model_selection import cross_val_predict, StratifiedKFold
+from sklearn.metrics import (accuracy_score, precision_score, recall_score,
+                             f1_score, roc_auc_score, roc_curve, precision_recall_curve)
 
 def add_prefix_except_id(df, prefix, id_exceptions=[]):
     """
@@ -73,3 +79,59 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
     ])
     
     return pipeline
+
+
+def evaluate_model(pipeline, X, y, model_name=None):
+    # Configure Seaborn aesthetics
+    sns.set(style="whitegrid")
+
+    # Determine model name
+    if not model_name:
+        # Attempt to get the class name of the last step in the pipeline (typically the estimator)
+        model_name = pipeline.steps[-1][1].__class__.__name__ if pipeline.steps else "Estimator"
+
+    # Setup Stratified K-Fold for cross-validation
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    
+    # Cross-validated predictions for metrics and probabilities
+    y_pred = cross_val_predict(pipeline, X, y, cv=skf)
+    y_prob = cross_val_predict(pipeline, X, y, cv=skf, method='predict_proba')
+
+    # Calculate metrics
+    metrics = {
+        'Accuracy': accuracy_score(y, y_pred),
+        'Precision': precision_score(y, y_pred, average='weighted'),
+        'Recall': recall_score(y, y_pred, average='weighted'),
+        'F1 Score': f1_score(y, y_pred, average='weighted'),
+        'ROC AUC': roc_auc_score(y, y_prob[:, 1])
+    }
+
+    # Create ROC Curve
+    fpr, tpr, _ = roc_curve(y, y_prob[:, 1])
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    sns.lineplot(x=fpr, y=tpr, label=f'{model_name} ROC (area = {metrics["ROC AUC"]:.2f})')
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+
+    # Create Precision-Recall Curve
+    precision, recall, _ = precision_recall_curve(y, y_prob[:, 1])
+    plt.subplot(1, 2, 2)
+    sns.lineplot(x=recall, y=precision, label=f'{model_name} Precision-Recall')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve')
+    plt.tight_layout()
+    plt.show()
+
+    # Create a lift curve
+    skplt.metrics.plot_lift_curve(y, y_prob)
+    plt.title(f'{model_name} Lift Curve')
+    plt.show()
+
+    # Return metrics as a DataFrame for easy viewing
+    return pd.DataFrame(metrics, index=[0])
