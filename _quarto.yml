@@ -1,4 +1,4 @@
 project:
-  title: "."
+  title: "AML: Cross Selling of Credit Cards"
 execute:
   freeze: auto
