@@ -1,0 +1,4 @@
+project:
+  title: "."
+execute:
+  freeze: auto
