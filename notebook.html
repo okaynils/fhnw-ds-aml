@@ -1,0 +1,3228 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.554">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Applied Machine Learning - Mini Challenge: Cross-Selling of Credit Cards</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="notebook_files/libs/clipboard/clipboard.min.js"></script>
+<script src="notebook_files/libs/quarto-html/quarto.js"></script>
+<script src="notebook_files/libs/quarto-html/popper.min.js"></script>
+<script src="notebook_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="notebook_files/libs/quarto-html/anchor.min.js"></script>
+<link href="notebook_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="notebook_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="notebook_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="notebook_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="notebook_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Applied Machine Learning - Mini Challenge: Cross-Selling of Credit Cards</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>Author</strong>: Nils Fahrni</p>
+<div id="cell-2" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.graph_objects <span class="im">as</span> go</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.io <span class="im">as</span> pio</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotly.subplots <span class="im">import</span> make_subplots</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>pio.templates.default <span class="op">=</span> <span class="st">'ggplot2'</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">'display.max_columns'</span>, <span class="va">None</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>sys.path.append(<span class="st">'scripts'</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataloader <span class="im">import</span> DataLoader</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="data-preprocessing" class="level2">
+<h2 class="anchored" data-anchor-id="data-preprocessing">Data Preprocessing</h2>
+<section id="data-loading" class="level3">
+<h3 class="anchored" data-anchor-id="data-loading">Data Loading</h3>
+<div id="cell-5" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data_loader <span class="op">=</span> DataLoader(base_path<span class="op">=</span><span class="st">'data'</span>, translations_name<span class="op">=</span><span class="st">'translation_mappings.json'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>data_loader.list_datasets()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="2">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Dataset</th>
+<th data-quarto-table-cell-role="th">Number of Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>account</td>
+<td>4500</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>card</td>
+<td>892</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>client</td>
+<td>5369</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>disp</td>
+<td>5369</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>district</td>
+<td>77</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>loan</td>
+<td>682</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">6</td>
+<td>order</td>
+<td>6471</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">7</td>
+<td>trans</td>
+<td>1056320</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<section id="account" class="level4">
+<h4 class="anchored" data-anchor-id="account">Account</h4>
+<div id="cell-7" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>account <span class="op">=</span> data_loader.load_csv(<span class="st">'account'</span>, parse_dates<span class="op">=</span>{<span class="st">'date'</span>: <span class="st">'%y%m</span><span class="sc">%d</span><span class="st">'</span>})</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>account.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mapped frequency:
+{
+    "POPLATEK MESICNE": "MONTHLY CHARGES",
+    "POPLATEK TYDNE": "WEEKLY CHARGES",
+    "POPLATEK PO OBRATU": "TRANSACTION CHARGES"
+}</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">district_id</th>
+<th data-quarto-table-cell-role="th">frequency</th>
+<th data-quarto-table-cell-role="th">date</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2377</td>
+<td>264</td>
+<td>15</td>
+<td>MONTHLY CHARGES</td>
+<td>1996-02-09</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">722</td>
+<td>3868</td>
+<td>43</td>
+<td>MONTHLY CHARGES</td>
+<td>1993-08-21</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2764</td>
+<td>877</td>
+<td>1</td>
+<td>MONTHLY CHARGES</td>
+<td>1996-05-29</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1041</td>
+<td>2989</td>
+<td>4</td>
+<td>MONTHLY CHARGES</td>
+<td>1993-11-28</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3526</td>
+<td>1557</td>
+<td>66</td>
+<td>MONTHLY CHARGES</td>
+<td>1996-12-13</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="client" class="level4">
+<h4 class="anchored" data-anchor-id="client">Client</h4>
+<div id="cell-9" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> data_loader.load_csv(<span class="st">'client'</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> client.assign(gender<span class="op">=</span>client[<span class="st">'birth_number'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="st">'FEMALE'</span> <span class="cf">if</span> <span class="bu">int</span>(<span class="bu">str</span>(x)[<span class="dv">2</span>:<span class="dv">4</span>]) <span class="op">&gt;</span> <span class="dv">50</span> <span class="cf">else</span> <span class="st">'MALE'</span>))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> client.assign(birth_number<span class="op">=</span>client.<span class="bu">apply</span>(<span class="kw">lambda</span> x: x[<span class="st">'birth_number'</span>] <span class="op">-</span> <span class="dv">5000</span> <span class="cf">if</span> x[<span class="st">'gender'</span>] <span class="op">==</span> <span class="st">'FEMALE'</span> <span class="cf">else</span> x[<span class="st">'birth_number'</span>], axis<span class="op">=</span><span class="dv">1</span>))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>client[<span class="st">'birth_number'</span>] <span class="op">=</span> pd.to_datetime(client[<span class="st">'birth_number'</span>], <span class="bu">format</span><span class="op">=</span><span class="st">'%y%m</span><span class="sc">%d</span><span class="st">'</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>client[<span class="st">'birth_date'</span>] <span class="op">=</span> client[<span class="st">'birth_number'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: x <span class="op">-</span> pd.DateOffset(years<span class="op">=</span><span class="dv">100</span>) <span class="cf">if</span> x.year <span class="op">&gt;</span> <span class="dv">1999</span> <span class="cf">else</span> x)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>client.drop(<span class="st">'birth_number'</span>, axis<span class="op">=</span><span class="dv">1</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>client[<span class="st">'age'</span>] <span class="op">=</span> (pd.to_datetime(<span class="st">'1999-12-31'</span>) <span class="op">-</span> client[<span class="st">'birth_date'</span>]).dt.days <span class="op">//</span> <span class="dv">365</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>client.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">client_id</th>
+<th data-quarto-table-cell-role="th">district_id</th>
+<th data-quarto-table-cell-role="th">gender</th>
+<th data-quarto-table-cell-role="th">birth_date</th>
+<th data-quarto-table-cell-role="th">age</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">976</td>
+<td>1030</td>
+<td>1</td>
+<td>MALE</td>
+<td>1947-10-11</td>
+<td>52</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2388</td>
+<td>2517</td>
+<td>18</td>
+<td>MALE</td>
+<td>1924-09-09</td>
+<td>75</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1590</td>
+<td>1683</td>
+<td>15</td>
+<td>FEMALE</td>
+<td>1951-12-24</td>
+<td>48</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1709</td>
+<td>1814</td>
+<td>57</td>
+<td>MALE</td>
+<td>1940-03-12</td>
+<td>59</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1220</td>
+<td>1282</td>
+<td>52</td>
+<td>MALE</td>
+<td>1936-11-27</td>
+<td>63</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="disposition" class="level4">
+<h4 class="anchored" data-anchor-id="disposition">Disposition</h4>
+<p>Removing disponents as the goal is to only advertise to owners. Disponents may be secondary users that have been authorized to use an account. They may be allowed to execute transactions on that account but they are not the authorized owners.</p>
+<div id="cell-11" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>disp <span class="op">=</span> data_loader.load_csv(<span class="st">'disp'</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>disp <span class="op">=</span> disp[disp[<span class="st">'type'</span>] <span class="op">!=</span> <span class="st">'DISPONENT'</span>]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>disp.drop(<span class="st">'type'</span>, axis<span class="op">=</span><span class="dv">1</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>disp.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">disp_id</th>
+<th data-quarto-table-cell-role="th">client_id</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3072</td>
+<td>3245</td>
+<td>3245</td>
+<td>2689</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">4600</td>
+<td>4961</td>
+<td>4961</td>
+<td>4121</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">5242</td>
+<td>11995</td>
+<td>12303</td>
+<td>10001</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2939</td>
+<td>3104</td>
+<td>3104</td>
+<td>2573</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">18</td>
+<td>19</td>
+<td>19</td>
+<td>14</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="permanent-order" class="level4">
+<h4 class="anchored" data-anchor-id="permanent-order">Permanent Order</h4>
+<div id="cell-13" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>order <span class="op">=</span> data_loader.load_csv(<span class="st">'order'</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>order.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mapped k_symbol:
+{
+    "POJISTNE": "INSURANCE PAYMENT",
+    "SIPO": "HOUSEHOLD",
+    "LEASING": "LEASING",
+    "UVER": "LOAN PAYMENT"
+}</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="6">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">order_id</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">bank_to</th>
+<th data-quarto-table-cell-role="th">account_to</th>
+<th data-quarto-table-cell-role="th">amount</th>
+<th data-quarto-table-cell-role="th">k_symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3976</td>
+<td>33789</td>
+<td>2965</td>
+<td>MN</td>
+<td>62399500</td>
+<td>2648.0</td>
+<td>HOUSEHOLD</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2187</td>
+<td>31822</td>
+<td>1647</td>
+<td>OP</td>
+<td>55010729</td>
+<td>2412.0</td>
+<td>HOUSEHOLD</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3107</td>
+<td>32851</td>
+<td>2344</td>
+<td>KL</td>
+<td>95720600</td>
+<td>1002.0</td>
+<td>HOUSEHOLD</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1612</td>
+<td>31182</td>
+<td>1218</td>
+<td>IJ</td>
+<td>27704996</td>
+<td>3213.4</td>
+<td>LEASING</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4921</td>
+<td>34858</td>
+<td>3702</td>
+<td>ST</td>
+<td>45320862</td>
+<td>9650.0</td>
+<td>HOUSEHOLD</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p><strong>Are there Null Values?</strong></p>
+<div id="cell-15" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>display(order.isnull().<span class="bu">sum</span>())</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>display(order[order[<span class="st">'k_symbol'</span>].isnull()].sample(<span class="dv">5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>order_id         0
+account_id       0
+bank_to          0
+account_to       0
+amount           0
+k_symbol      1379
+dtype: int64</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">order_id</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">bank_to</th>
+<th data-quarto-table-cell-role="th">account_to</th>
+<th data-quarto-table-cell-role="th">amount</th>
+<th data-quarto-table-cell-role="th">k_symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4657</td>
+<td>34565</td>
+<td>3487</td>
+<td>QR</td>
+<td>94053124</td>
+<td>7951.0</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1766</td>
+<td>31352</td>
+<td>1326</td>
+<td>QR</td>
+<td>85305046</td>
+<td>954.0</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">53</td>
+<td>29457</td>
+<td>38</td>
+<td>KL</td>
+<td>83435654</td>
+<td>231.0</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2961</td>
+<td>32668</td>
+<td>2226</td>
+<td>GH</td>
+<td>53093177</td>
+<td>8042.0</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1338</td>
+<td>30865</td>
+<td>1002</td>
+<td>EF</td>
+<td>29577315</td>
+<td>1092.0</td>
+<td>NaN</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<div id="cell-16" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>order[<span class="st">'k_symbol'</span>] <span class="op">=</span> order[<span class="st">'k_symbol'</span>].fillna(<span class="st">'MISSING'</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>order_pivot <span class="op">=</span> order.pivot_table(index<span class="op">=</span><span class="st">'account_id'</span>, columns<span class="op">=</span><span class="st">'k_symbol'</span>, values<span class="op">=</span><span class="st">'amount'</span>, aggfunc<span class="op">=</span><span class="st">'count'</span>, fill_value<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>order_pivot.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">k_symbol</th>
+<th data-quarto-table-cell-role="th">HOUSEHOLD</th>
+<th data-quarto-table-cell-role="th">INSURANCE PAYMENT</th>
+<th data-quarto-table-cell-role="th">LEASING</th>
+<th data-quarto-table-cell-role="th">LOAN PAYMENT</th>
+<th data-quarto-table-cell-role="th">MISSING</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4293</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3896</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">11013</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1774</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3484</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="transaction" class="level4">
+<h4 class="anchored" data-anchor-id="transaction">Transaction</h4>
+<p>TODO: - amount to negative or positive based on if withdrawal or deposit - Research account number 19 (time series account balance, at least per month) - this acc is volatile - account’s balance goes negative sometimes - what happens to accounts with multiple transactions on a day? - how to obtain the actual end of day balance? - add up withdrawals with deposits and add to balance of day before - try to vectorize this problem (R antijoin mentioned)</p>
+<div id="cell-18" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>transaction <span class="op">=</span> data_loader.load_csv(<span class="st">'trans'</span>, parse_dates<span class="op">=</span>{<span class="st">'date'</span>: <span class="st">'%y%m</span><span class="sc">%d</span><span class="st">'</span>})</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>transaction.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mapped type:
+{
+    "PRIJEM": "CREDIT",
+    "VYDAJ": "WITHDRAWAL"
+}
+Mapped operation:
+{
+    "VYBER KARTOU": "CREDIT CARD WITHDRAWAL",
+    "VKLAD": "CREDIT IN CASH",
+    "PREVOD Z UCTU": "COLLECTION FROM ANOTHER BANK",
+    "VYBER": "WITHDRAWAL IN CASH",
+    "PREVOD NA UCET": "REMITTANCE TO ANOTHER BANK"
+}
+Mapped k_symbol:
+{
+    "POJISTNE": "INSURANCE PAYMENT",
+    "SLUZBY": "PAYMENT FOR STATEMENT",
+    "UROK": "INTEREST CREDITED",
+    "SANKC. UROK": "SANCTION INTEREST IF NEGATIVE BALANCE",
+    "SIPO": "HOUSEHOLD",
+    "DUCHOD": "OLD-AGE PENSION",
+    "UVER": "LOAN PAYMENT"
+}</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">trans_id</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">date</th>
+<th data-quarto-table-cell-role="th">type</th>
+<th data-quarto-table-cell-role="th">operation</th>
+<th data-quarto-table-cell-role="th">amount</th>
+<th data-quarto-table-cell-role="th">balance</th>
+<th data-quarto-table-cell-role="th">k_symbol</th>
+<th data-quarto-table-cell-role="th">bank</th>
+<th data-quarto-table-cell-role="th">account</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">120180</td>
+<td>84009</td>
+<td>280</td>
+<td>1995-01-01</td>
+<td>WITHDRAWAL</td>
+<td>WITHDRAWAL IN CASH</td>
+<td>2280.0</td>
+<td>25114.5</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">256758</td>
+<td>498643</td>
+<td>1699</td>
+<td>1996-01-07</td>
+<td>WITHDRAWAL</td>
+<td>WITHDRAWAL IN CASH</td>
+<td>480.0</td>
+<td>18490.6</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">686178</td>
+<td>423012</td>
+<td>1437</td>
+<td>1997-11-08</td>
+<td>CREDIT</td>
+<td>COLLECTION FROM ANOTHER BANK</td>
+<td>3258.0</td>
+<td>22747.9</td>
+<td>NaN</td>
+<td>YZ</td>
+<td>10694808.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">647489</td>
+<td>463601</td>
+<td>1577</td>
+<td>1997-09-21</td>
+<td>WITHDRAWAL</td>
+<td>WITHDRAWAL IN CASH</td>
+<td>1110.0</td>
+<td>20962.8</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">804994</td>
+<td>365891</td>
+<td>1244</td>
+<td>1998-03-07</td>
+<td>WITHDRAWAL</td>
+<td>REMITTANCE TO ANOTHER BANK</td>
+<td>903.0</td>
+<td>15546.1</td>
+<td>HOUSEHOLD</td>
+<td>EF</td>
+<td>22533941.0</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="loan" class="level4">
+<h4 class="anchored" data-anchor-id="loan">Loan</h4>
+<div id="cell-20" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>loan <span class="op">=</span> data_loader.load_csv(<span class="st">'loan'</span>, parse_dates<span class="op">=</span>{<span class="st">'date'</span>: <span class="st">'%y%m</span><span class="sc">%d</span><span class="st">'</span>})</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>loan.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mapped status:
+{
+    "A": "contract finished, no problems",
+    "B": "contract finished, loan not payed",
+    "C": "running contract, OK so far",
+    "D": "running contract, client in debt"
+}</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">loan_id</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">date</th>
+<th data-quarto-table-cell-role="th">amount</th>
+<th data-quarto-table-cell-role="th">duration</th>
+<th data-quarto-table-cell-role="th">payments</th>
+<th data-quarto-table-cell-role="th">status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">416</td>
+<td>6877</td>
+<td>9241</td>
+<td>1997-06-19</td>
+<td>285240</td>
+<td>60</td>
+<td>4754.0</td>
+<td>running contract, OK so far</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">656</td>
+<td>5368</td>
+<td>2073</td>
+<td>1998-10-05</td>
+<td>44640</td>
+<td>24</td>
+<td>1860.0</td>
+<td>running contract, OK so far</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">502</td>
+<td>4988</td>
+<td>103</td>
+<td>1997-12-06</td>
+<td>265320</td>
+<td>36</td>
+<td>7370.0</td>
+<td>running contract, client in debt</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">442</td>
+<td>6541</td>
+<td>7565</td>
+<td>1997-08-17</td>
+<td>153504</td>
+<td>48</td>
+<td>3198.0</td>
+<td>running contract, OK so far</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">274</td>
+<td>7246</td>
+<td>11054</td>
+<td>1996-08-20</td>
+<td>148920</td>
+<td>60</td>
+<td>2482.0</td>
+<td>running contract, OK so far</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p><strong>Can an account have multiple loans?</strong></p>
+<div id="cell-22" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'Are there accounts with multiple loans: </span><span class="sc">{</span>loan[<span class="st">"account_id"</span>]<span class="sc">.</span>nunique() <span class="op">&lt;</span> loan<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Are there accounts with multiple loans: False</code></pre>
+</div>
+</div>
+</section>
+<section id="credit-card" class="level4">
+<h4 class="anchored" data-anchor-id="credit-card">Credit Card</h4>
+<div id="cell-24" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>card <span class="op">=</span> data_loader.load_csv(<span class="st">'card'</span>, parse_dates<span class="op">=</span>{<span class="st">'issued'</span>: <span class="st">'%y%m</span><span class="sc">%d</span><span class="st">'</span>})</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>card.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="12">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">card_id</th>
+<th data-quarto-table-cell-role="th">disp_id</th>
+<th data-quarto-table-cell-role="th">type</th>
+<th data-quarto-table-cell-role="th">issued</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">517</td>
+<td>290</td>
+<td>1833</td>
+<td>classic</td>
+<td>1998-03-24</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">849</td>
+<td>657</td>
+<td>4246</td>
+<td>junior</td>
+<td>1998-12-02</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">203</td>
+<td>565</td>
+<td>3601</td>
+<td>gold</td>
+<td>1997-01-06</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">281</td>
+<td>353</td>
+<td>2259</td>
+<td>classic</td>
+<td>1997-06-11</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">236</td>
+<td>568</td>
+<td>3615</td>
+<td>classic</td>
+<td>1997-03-05</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="district" class="level4">
+<h4 class="anchored" data-anchor-id="district">District</h4>
+<div id="cell-26" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>district <span class="op">=</span> data_loader.load_csv(<span class="st">'district'</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>district <span class="op">=</span> district.rename(columns<span class="op">=</span>{</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A1'</span>: <span class="st">'district_id'</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A2'</span>: <span class="st">'district_name'</span>,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A3'</span>: <span class="st">'region'</span>,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A4'</span>: <span class="st">'population'</span>,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A5'</span>: <span class="st">'n_municipalities_with_inhabitants_lt_499'</span>,</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A6'</span>: <span class="st">'n_municipalities_with_inhabitants_500_to_1999'</span>,</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A7'</span>: <span class="st">'n_municipalities_with_inhabitants_2000_to_9999'</span>,</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A8'</span>: <span class="st">'n_municipalities_with_inhabitants_gt_10000'</span>,</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A9'</span>: <span class="st">'n_cities'</span>,</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A10'</span>: <span class="st">'ratio_urban_inhabitants'</span>,</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A11'</span>: <span class="st">'average_salary'</span>,</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A12'</span>: <span class="st">'unemployment_rate_95'</span>,</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A13'</span>: <span class="st">'unemployment_rate_96'</span>,</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A14'</span>: <span class="st">'enterpreneurs_per_1000_inhabitants'</span>,</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A15'</span>: <span class="st">'n_commited_crimes_95'</span>,</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'A16'</span>: <span class="st">'n_commited_crimes_96'</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>district.sample(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="13">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">district_id</th>
+<th data-quarto-table-cell-role="th">district_name</th>
+<th data-quarto-table-cell-role="th">region</th>
+<th data-quarto-table-cell-role="th">population</th>
+<th data-quarto-table-cell-role="th">n_municipalities_with_inhabitants_lt_499</th>
+<th data-quarto-table-cell-role="th">n_municipalities_with_inhabitants_500_to_1999</th>
+<th data-quarto-table-cell-role="th">n_municipalities_with_inhabitants_2000_to_9999</th>
+<th data-quarto-table-cell-role="th">n_municipalities_with_inhabitants_gt_10000</th>
+<th data-quarto-table-cell-role="th">n_cities</th>
+<th data-quarto-table-cell-role="th">ratio_urban_inhabitants</th>
+<th data-quarto-table-cell-role="th">average_salary</th>
+<th data-quarto-table-cell-role="th">unemployment_rate_95</th>
+<th data-quarto-table-cell-role="th">unemployment_rate_96</th>
+<th data-quarto-table-cell-role="th">enterpreneurs_per_1000_inhabitants</th>
+<th data-quarto-table-cell-role="th">n_commited_crimes_95</th>
+<th data-quarto-table-cell-role="th">n_commited_crimes_96</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">60</td>
+<td>61</td>
+<td>Trebic</td>
+<td>south Moravia</td>
+<td>117897</td>
+<td>139</td>
+<td>28</td>
+<td>5</td>
+<td>1</td>
+<td>6</td>
+<td>53.8</td>
+<td>8814</td>
+<td>4.76</td>
+<td>5.74</td>
+<td>107</td>
+<td>2112</td>
+<td>2059</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">57</td>
+<td>58</td>
+<td>Jihlava</td>
+<td>south Moravia</td>
+<td>109164</td>
+<td>98</td>
+<td>16</td>
+<td>6</td>
+<td>1</td>
+<td>4</td>
+<td>63.6</td>
+<td>8757</td>
+<td>3.38</td>
+<td>3.95</td>
+<td>96</td>
+<td>2212</td>
+<td>2471</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">17</td>
+<td>18</td>
+<td>Pisek</td>
+<td>south Bohemia</td>
+<td>70699</td>
+<td>60</td>
+<td>13</td>
+<td>2</td>
+<td>1</td>
+<td>4</td>
+<td>65.3</td>
+<td>8968</td>
+<td>2.83</td>
+<td>3.35</td>
+<td>131</td>
+<td>1740</td>
+<td>1910</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>10</td>
+<td>Praha - vychod</td>
+<td>central Bohemia</td>
+<td>92084</td>
+<td>55</td>
+<td>29</td>
+<td>4</td>
+<td>3</td>
+<td>5</td>
+<td>46.7</td>
+<td>10124</td>
+<td>0.56</td>
+<td>0.54</td>
+<td>141</td>
+<td>3810</td>
+<td>4316</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">56</td>
+<td>57</td>
+<td>Hodonin</td>
+<td>south Moravia</td>
+<td>161954</td>
+<td>21</td>
+<td>37</td>
+<td>20</td>
+<td>3</td>
+<td>8</td>
+<td>48.0</td>
+<td>8720</td>
+<td>3.73</td>
+<td>4.50</td>
+<td>116</td>
+<td>3729</td>
+<td>3651</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="data-merging" class="level3">
+<h3 class="anchored" data-anchor-id="data-merging">Data Merging</h3>
+<div id="cell-28" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> add_prefix_except_id</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>account <span class="op">=</span> add_prefix_except_id(account, <span class="st">'account_'</span>, id_exceptions<span class="op">=</span>[<span class="st">'district_id'</span>])</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> disp.merge(account, on<span class="op">=</span><span class="st">'account_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> add_prefix_except_id(client, <span class="st">'client_'</span>, id_exceptions<span class="op">=</span>[<span class="st">'district_id'</span>])</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df.merge(client, on<span class="op">=</span><span class="st">'client_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>order_pivot <span class="op">=</span> add_prefix_except_id(order_pivot, <span class="st">'ordertype_'</span>)</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df.merge(order_pivot, on<span class="op">=</span><span class="st">'account_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>loan <span class="op">=</span> add_prefix_except_id(loan, <span class="st">'loan_'</span>)</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df.merge(loan, on<span class="op">=</span><span class="st">'account_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>card <span class="op">=</span> add_prefix_except_id(card, <span class="st">'card_'</span>)</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df.merge(card, on<span class="op">=</span><span class="st">'disp_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>client_district <span class="op">=</span> add_prefix_except_id(district, <span class="st">'client_district_'</span>)</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df.merge(client_district, left_on<span class="op">=</span><span class="st">'client_district_id'</span>, right_on<span class="op">=</span><span class="st">'district_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>account_district <span class="op">=</span> add_prefix_except_id(district, <span class="st">'account_district_'</span>)</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df.merge(account_district, left_on<span class="op">=</span><span class="st">'account_district_id'</span>, right_on<span class="op">=</span><span class="st">'district_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>client_df.sample(<span class="dv">5</span>)</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>n_merged_base_client <span class="op">=</span> client_df.shape[<span class="dv">0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-29" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> client_df[<span class="st">'account_id'</span>].nunique() <span class="op">==</span> client_df.shape[<span class="dv">0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="data-cleaning" class="level3">
+<h3 class="anchored" data-anchor-id="data-cleaning">Data Cleaning</h3>
+<section id="removing-junior-cards" class="level4">
+<h4 class="anchored" data-anchor-id="removing-junior-cards">Removing Junior Cards</h4>
+<div id="cell-32" class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>junior_clients <span class="op">=</span> client_df[client_df[<span class="st">'card_type'</span>] <span class="op">==</span> <span class="st">'junior'</span>]</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df[<span class="op">~</span>client_df[<span class="st">'account_id'</span>].isin(junior_clients[<span class="st">'account_id'</span>])]</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>transaction <span class="op">=</span> transaction[<span class="op">~</span>transaction[<span class="st">'account_id'</span>].isin(junior_clients[<span class="st">'account_id'</span>])]</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>client_df[<span class="st">'has_card'</span>] <span class="op">=</span> client_df[<span class="st">'card_id'</span>].notnull()</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'Number of junior clients: </span><span class="sc">{</span>junior_clients<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'Number of clients remaining: </span><span class="sc">{</span>client_df<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Number of junior clients: 145
+Number of clients remaining: 4355</code></pre>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="model-construction" class="level2">
+<h2 class="anchored" data-anchor-id="model-construction">Model Construction</h2>
+<section id="processing-transactional-data" class="level3">
+<h3 class="anchored" data-anchor-id="processing-transactional-data">Processing Transactional Data</h3>
+<ul>
+<li>The goal is to predict if a non-card-owner will buy a card or not</li>
+</ul>
+<p>The first task is to look if every account in the transactions dataframe has a “first transaction”. This would make the calculation of the monthly balance much easier since everything can be summed up without having to worry that there were months without records in the transaction dataframe.</p>
+<div id="cell-36" class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the minimum (first) transaction(s) date for each account</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>min_dates <span class="op">=</span> transaction.groupby(<span class="st">'account_id'</span>)[<span class="st">'date'</span>].<span class="bu">min</span>().reset_index()</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>min_dates.rename(columns<span class="op">=</span>{<span class="st">'date'</span>: <span class="st">'min_date'</span>}, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge the minimum date back to the transactions to identify all transactions on the first day</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>transactions_with_min_date <span class="op">=</span> pd.merge(transaction, min_dates, on<span class="op">=</span><span class="st">'account_id'</span>)</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter transactions that are on the first day</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>first_day_transactions <span class="op">=</span> transactions_with_min_date[transactions_with_min_date[<span class="st">'date'</span>] <span class="op">==</span> transactions_with_min_date[<span class="st">'min_date'</span>]]</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>first_day_transactions <span class="op">=</span> first_day_transactions.copy()</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Now, for each of these first day transactions, check if any have amount equals balance</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>first_day_transactions[<span class="st">'amount_equals_balance'</span>] <span class="op">=</span> first_day_transactions[<span class="st">'amount'</span>] <span class="op">==</span> first_day_transactions[<span class="st">'balance'</span>]</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Group by account_id and check if any transactions for each account meet the condition</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>accounts_meeting_condition <span class="op">=</span> first_day_transactions.groupby(<span class="st">'account_id'</span>)[<span class="st">'amount_equals_balance'</span>].<span class="bu">any</span>().reset_index()</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify if all accounts have at least one transaction on the first day meeting the condition</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>all_accounts_covered <span class="op">=</span> accounts_meeting_condition[<span class="st">'amount_equals_balance'</span>].<span class="bu">all</span>()</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Does every account's first day of transactions include at least one transaction where amount equals balance?"</span>, all_accounts_covered)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Does every account's first day of transactions include at least one transaction where amount equals balance? True</code></pre>
+</div>
+</div>
+<p>Now every accounts balance needs to be calculated per month.</p>
+<div id="cell-38" class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>transaction[<span class="st">'month'</span>] <span class="op">=</span> transaction[<span class="st">'date'</span>].dt.to_period(<span class="st">'M'</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>transactions_monthly <span class="op">=</span> transaction.groupby([<span class="st">'account_id'</span>, <span class="st">'month'</span>]).agg(</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    volume<span class="op">=</span>(<span class="st">'amount'</span>, <span class="st">'sum'</span>),</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    credit<span class="op">=</span>(<span class="st">'amount'</span>, <span class="kw">lambda</span> x: x[x <span class="op">&gt;</span> <span class="dv">0</span>].<span class="bu">sum</span>()),</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    withdrawal<span class="op">=</span>(<span class="st">'amount'</span>, <span class="kw">lambda</span> x: x[x <span class="op">&lt;</span> <span class="dv">0</span>].<span class="bu">sum</span>()),</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    n_transactions<span class="op">=</span>(<span class="st">'amount'</span>, <span class="st">'size'</span>)</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>).reset_index()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-39" class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'month'</span>] <span class="op">=</span> pd.PeriodIndex(transactions_monthly[<span class="st">'month'</span>])</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>date_ranges <span class="op">=</span> transactions_monthly.groupby(<span class="st">'account_id'</span>)[<span class="st">'month'</span>].agg([<span class="st">'min'</span>, <span class="st">'max'</span>])</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> reindex_df(group, account_id):</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    idx <span class="op">=</span> pd.period_range(start<span class="op">=</span>group[<span class="st">'month'</span>].<span class="bu">min</span>(), end<span class="op">=</span>group[<span class="st">'month'</span>].<span class="bu">max</span>(), freq<span class="op">=</span><span class="st">'M'</span>)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    group.set_index(<span class="st">'month'</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    group <span class="op">=</span> group.reindex(idx, fill_value<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    group.reset_index(inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    group.rename(columns<span class="op">=</span>{<span class="st">'index'</span>: <span class="st">'month'</span>}, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    group[<span class="st">'account_id'</span>] <span class="op">=</span> account_id</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> group</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>transactions_monthly <span class="op">=</span> (transactions_monthly.groupby(<span class="st">'account_id'</span>)</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>                        .<span class="bu">apply</span>(<span class="kw">lambda</span> x: reindex_df(x, x.name))</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>                        .reset_index(level<span class="op">=</span><span class="dv">0</span>, drop<span class="op">=</span><span class="va">True</span>))</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate cumulative balance</span></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'balance'</span>] <span class="op">=</span> transactions_monthly.groupby(<span class="st">'account_id'</span>)[<span class="st">'volume'</span>].cumsum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>C:\Users\fahrn\AppData\Local\Temp\ipykernel_24292\3639110262.py:15: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  .apply(lambda x: reindex_df(x, x.name))</code></pre>
+</div>
+</div>
+<div id="cell-40" class="cell" data-execution_count="20">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>transactions_monthly</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="20">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">month</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">volume</th>
+<th data-quarto-table-cell-role="th">credit</th>
+<th data-quarto-table-cell-role="th">withdrawal</th>
+<th data-quarto-table-cell-role="th">n_transactions</th>
+<th data-quarto-table-cell-role="th">balance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1995-03</td>
+<td>1</td>
+<td>1000.0</td>
+<td>1000.0</td>
+<td>0.0</td>
+<td>1</td>
+<td>1000.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1995-04</td>
+<td>1</td>
+<td>16298.2</td>
+<td>16298.2</td>
+<td>0.0</td>
+<td>3</td>
+<td>17298.2</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1995-05</td>
+<td>1</td>
+<td>5858.0</td>
+<td>5858.0</td>
+<td>0.0</td>
+<td>3</td>
+<td>23156.2</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>1995-06</td>
+<td>1</td>
+<td>3979.6</td>
+<td>3979.6</td>
+<td>0.0</td>
+<td>3</td>
+<td>27135.8</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>1995-07</td>
+<td>1</td>
+<td>9087.9</td>
+<td>9087.9</td>
+<td>0.0</td>
+<td>3</td>
+<td>36223.7</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">36</td>
+<td>1998-08</td>
+<td>11382</td>
+<td>54569.5</td>
+<td>54569.5</td>
+<td>0.0</td>
+<td>7</td>
+<td>2386853.6</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">37</td>
+<td>1998-09</td>
+<td>11382</td>
+<td>44120.0</td>
+<td>44120.0</td>
+<td>0.0</td>
+<td>5</td>
+<td>2430973.6</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">38</td>
+<td>1998-10</td>
+<td>11382</td>
+<td>63262.2</td>
+<td>63262.2</td>
+<td>0.0</td>
+<td>6</td>
+<td>2494235.8</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">39</td>
+<td>1998-11</td>
+<td>11382</td>
+<td>50165.7</td>
+<td>50165.7</td>
+<td>0.0</td>
+<td>5</td>
+<td>2544401.5</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">40</td>
+<td>1998-12</td>
+<td>11382</td>
+<td>78760.4</td>
+<td>78760.4</td>
+<td>0.0</td>
+<td>5</td>
+<td>2623161.9</td>
+</tr>
+</tbody>
+</table>
+
+<p>179054 rows × 7 columns</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="defining-roll-up-windows-of-transactions" class="level3">
+<h3 class="anchored" data-anchor-id="defining-roll-up-windows-of-transactions">Defining Roll-Up Windows of Transactions</h3>
+<p>Before we can continue to filter out customers that have at least 13 Months of transaction history it is also needed to give non-customers a fictional <code>card_issued</code> date so we can build negative samples that also contain a 13-Month rollup window.</p>
+<div id="cell-43" class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>clients_with_cards <span class="op">=</span> client_df[<span class="op">~</span>client_df[<span class="st">'card_issued'</span>].isnull()]</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>time_between_creation_and_issue <span class="op">=</span> (clients_with_cards[<span class="st">'card_issued'</span>]<span class="op">-</span>clients_with_cards[<span class="st">'account_date'</span>]).dt.days</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Histogram(x<span class="op">=</span>time_between_creation_and_issue, histnorm<span class="op">=</span><span class="st">'percent'</span>, nbinsx<span class="op">=</span><span class="dv">50</span>))</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>fig.update_traces(marker_line_width<span class="op">=</span><span class="dv">1</span>, marker_line_color<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">'Distribution of Card Issuance Dates'</span>,</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    xaxis_title<span class="op">=</span><span class="st">'Days'</span>,</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    yaxis_title<span class="op">=</span><span class="st">'Percentage of Accounts'</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+<p>An observation we can make when looking at the distribution of when cards usually get issued after the account creation is that there don’t seem to be any issuances before day 200 of the account.</p>
+<div id="cell-45" class="cell" data-execution_count="22">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">1337</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>sampled_deltas <span class="op">=</span> np.random.choice(time_between_creation_and_issue, size<span class="op">=</span><span class="bu">len</span>(client_df[client_df[<span class="st">'card_issued'</span>].isnull()]))</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Histogram(x<span class="op">=</span>sampled_deltas, histnorm<span class="op">=</span><span class="st">'percent'</span>, name<span class="op">=</span><span class="st">'Sampled Deltas'</span>, nbinsx<span class="op">=</span><span class="dv">50</span>))</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Histogram(x<span class="op">=</span>time_between_creation_and_issue, histnorm<span class="op">=</span><span class="st">'percent'</span>, name<span class="op">=</span><span class="st">'Original Deltas'</span>, nbinsx<span class="op">=</span><span class="dv">50</span>))</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>fig.update_traces(marker_line_width<span class="op">=</span><span class="dv">1</span>, marker_line_color<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">'Distribution of Card Issuance Dates'</span>,</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    xaxis_title<span class="op">=</span><span class="st">'Days'</span>,</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>    yaxis_title<span class="op">=</span><span class="st">'Percentage of Accounts'</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+<div id="cell-46" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">len</span>(client_df[client_df[<span class="st">'card_issued'</span>].isnull()]) <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    client_df.loc[client_df[<span class="st">'card_issued'</span>].isnull(), <span class="st">'card_issued'</span>] <span class="op">=</span> client_df.loc[client_df[<span class="st">'card_issued'</span>].isnull(), <span class="st">'account_date'</span>] <span class="op">+</span> pd.to_timedelta(sampled_deltas, unit<span class="op">=</span><span class="st">'D'</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'Number of NaT/NaN values in card_issued: </span><span class="sc">{</span>client_df[<span class="st">"card_issued"</span>]<span class="sc">.</span>isnull()<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Number of NaT/NaN values in card_issued: 0</code></pre>
+</div>
+</div>
+<div id="cell-47" class="cell" data-execution_count="24">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>card_issued <span class="op">=</span> card.groupby(<span class="st">'disp_id'</span>)[<span class="st">'card_issued'</span>].<span class="bu">min</span>().reset_index()</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>card_issued.head(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="24">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">disp_id</th>
+<th data-quarto-table-cell-role="th">card_issued</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>9</td>
+<td>1998-10-16</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>19</td>
+<td>1998-03-13</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>41</td>
+<td>1995-09-03</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>42</td>
+<td>1998-11-26</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>51</td>
+<td>1995-04-24</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<div id="cell-48" class="cell" data-execution_count="25">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>client_df[client_df[<span class="st">'disp_id'</span>].isnull()].shape[<span class="dv">0</span>]</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>transactions_monthly.info()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+Index: 179054 entries, 0 to 40
+Data columns (total 7 columns):
+ #   Column          Non-Null Count   Dtype    
+---  ------          --------------   -----    
+ 0   month           179054 non-null  period[M]
+ 1   account_id      179054 non-null  int64    
+ 2   volume          179054 non-null  float64  
+ 3   credit          179054 non-null  float64  
+ 4   withdrawal      179054 non-null  float64  
+ 5   n_transactions  179054 non-null  int64    
+ 6   balance         179054 non-null  float64  
+dtypes: float64(4), int64(2), period[M](1)
+memory usage: 10.9 MB</code></pre>
+</div>
+</div>
+<div id="cell-49" class="cell" data-execution_count="26">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>transactions_monthly <span class="op">=</span> transactions_monthly.merge(client_df[[<span class="st">'account_id'</span>, <span class="st">'card_issued'</span>]], left_on<span class="op">=</span><span class="st">'account_id'</span>, right_on<span class="op">=</span><span class="st">'account_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>transactions_monthly.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="26">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">month</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">volume</th>
+<th data-quarto-table-cell-role="th">credit</th>
+<th data-quarto-table-cell-role="th">withdrawal</th>
+<th data-quarto-table-cell-role="th">n_transactions</th>
+<th data-quarto-table-cell-role="th">balance</th>
+<th data-quarto-table-cell-role="th">card_issued</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1995-03</td>
+<td>1</td>
+<td>1000.0</td>
+<td>1000.0</td>
+<td>0.0</td>
+<td>1</td>
+<td>1000.0</td>
+<td>1998-09-18</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1995-04</td>
+<td>1</td>
+<td>16298.2</td>
+<td>16298.2</td>
+<td>0.0</td>
+<td>3</td>
+<td>17298.2</td>
+<td>1998-09-18</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1995-05</td>
+<td>1</td>
+<td>5858.0</td>
+<td>5858.0</td>
+<td>0.0</td>
+<td>3</td>
+<td>23156.2</td>
+<td>1998-09-18</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>1995-06</td>
+<td>1</td>
+<td>3979.6</td>
+<td>3979.6</td>
+<td>0.0</td>
+<td>3</td>
+<td>27135.8</td>
+<td>1998-09-18</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>1995-07</td>
+<td>1</td>
+<td>9087.9</td>
+<td>9087.9</td>
+<td>0.0</td>
+<td>3</td>
+<td>36223.7</td>
+<td>1998-09-18</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p>Now, let’s see if the join worked correctly and we don’t have any transactions without a <code>card_issued</code> date anymore.</p>
+<div id="cell-51" class="cell" data-execution_count="27">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> transactions_monthly[<span class="st">'card_issued'</span>].isnull().<span class="bu">sum</span>() <span class="op">==</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="validating-negative-examples" class="level3">
+<h3 class="anchored" data-anchor-id="validating-negative-examples">Validating Negative Examples</h3>
+<p>The goal for our model will be to be able to learn from a base set of customers (with and without cards) that lived through the same economic circumstances. To validate that all customers in our current set are represented in a well distributed way, this next plot looks at the distribution of volume throughout the datasets timeframe.</p>
+<div id="cell-53" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'has_card'</span>] <span class="op">=</span> transactions_monthly[<span class="st">'account_id'</span>].isin(client_df[client_df[<span class="st">'has_card'</span>]][<span class="st">'account_id'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-54" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>transactions_monthly.reset_index(inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'id'</span>] <span class="op">=</span> <span class="bu">range</span>(<span class="bu">len</span>(transactions_monthly))</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>transactions_monthly.set_index(<span class="st">'id'</span>, inplace<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-55" class="cell" data-execution_count="30">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> has_card <span class="kw">in</span> [<span class="va">True</span>, <span class="va">False</span>]:</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> transactions_monthly[transactions_monthly[<span class="st">'has_card'</span>] <span class="op">==</span> has_card]</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    data_grouped <span class="op">=</span> data.groupby(<span class="st">'month'</span>)[<span class="st">'volume'</span>].<span class="bu">sum</span>().reset_index()</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Direct conversion of the month column to string</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    data_grouped[<span class="st">'month'</span>] <span class="op">=</span> data_grouped[<span class="st">'month'</span>].astype(<span class="bu">str</span>)</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>    fig.add_trace(go.Scatter(x<span class="op">=</span>data_grouped[<span class="st">'month'</span>], y<span class="op">=</span>data_grouped[<span class="st">'volume'</span>] <span class="op">/</span> data.shape[<span class="dv">0</span>],</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>                             mode<span class="op">=</span><span class="st">'lines'</span>,</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>                             name<span class="op">=</span><span class="st">'Clients with Cards'</span> <span class="cf">if</span> has_card <span class="cf">else</span> <span class="st">'Clients without Cards'</span>))</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>fig.update_layout(title_text<span class="op">=</span><span class="st">'Transaction Volume per Month'</span>,</span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>                  xaxis_title<span class="op">=</span><span class="st">'Month'</span>,</span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>                  yaxis_title<span class="op">=</span><span class="st">'Average Transaction Volume per Client ($)'</span>,</span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>                  showlegend<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+<div id="cell-56" class="cell" data-execution_count="31">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'card_issued'</span>] <span class="op">=</span> pd.to_datetime(transactions_monthly[<span class="st">'card_issued'</span>])</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'card_issued_period'</span>] <span class="op">=</span> transactions_monthly[<span class="st">'card_issued'</span>].dt.to_period(<span class="st">'M'</span>)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'month_diff'</span>] <span class="op">=</span> transactions_monthly.<span class="bu">apply</span>(<span class="kw">lambda</span> row: (row[<span class="st">'card_issued_period'</span>] <span class="op">-</span> row[<span class="st">'month'</span>]).n <span class="cf">if</span> pd.notnull(row[<span class="st">'card_issued_period'</span>]) <span class="kw">and</span> pd.notnull(row[<span class="st">'month'</span>]) <span class="cf">else</span> <span class="va">None</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>filtered_transactions <span class="op">=</span> transactions_monthly[transactions_monthly[<span class="st">'month_diff'</span>].between(<span class="dv">1</span>, <span class="dv">13</span>)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-57" class="cell" data-execution_count="32">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>transactions_monthly</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="32">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">index</th>
+<th data-quarto-table-cell-role="th">month</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">volume</th>
+<th data-quarto-table-cell-role="th">credit</th>
+<th data-quarto-table-cell-role="th">withdrawal</th>
+<th data-quarto-table-cell-role="th">n_transactions</th>
+<th data-quarto-table-cell-role="th">balance</th>
+<th data-quarto-table-cell-role="th">card_issued</th>
+<th data-quarto-table-cell-role="th">has_card</th>
+<th data-quarto-table-cell-role="th">card_issued_period</th>
+<th data-quarto-table-cell-role="th">month_diff</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>1995-03</td>
+<td>1</td>
+<td>1000.0</td>
+<td>1000.0</td>
+<td>0.0</td>
+<td>1</td>
+<td>1000.0</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>42</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>1995-04</td>
+<td>1</td>
+<td>16298.2</td>
+<td>16298.2</td>
+<td>0.0</td>
+<td>3</td>
+<td>17298.2</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>41</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2</td>
+<td>1995-05</td>
+<td>1</td>
+<td>5858.0</td>
+<td>5858.0</td>
+<td>0.0</td>
+<td>3</td>
+<td>23156.2</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>40</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>3</td>
+<td>1995-06</td>
+<td>1</td>
+<td>3979.6</td>
+<td>3979.6</td>
+<td>0.0</td>
+<td>3</td>
+<td>27135.8</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>39</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>4</td>
+<td>1995-07</td>
+<td>1</td>
+<td>9087.9</td>
+<td>9087.9</td>
+<td>0.0</td>
+<td>3</td>
+<td>36223.7</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>38</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">179049</td>
+<td>179049</td>
+<td>1998-08</td>
+<td>11382</td>
+<td>54569.5</td>
+<td>54569.5</td>
+<td>0.0</td>
+<td>7</td>
+<td>2386853.6</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>-23</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">179050</td>
+<td>179050</td>
+<td>1998-09</td>
+<td>11382</td>
+<td>44120.0</td>
+<td>44120.0</td>
+<td>0.0</td>
+<td>5</td>
+<td>2430973.6</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>-24</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">179051</td>
+<td>179051</td>
+<td>1998-10</td>
+<td>11382</td>
+<td>63262.2</td>
+<td>63262.2</td>
+<td>0.0</td>
+<td>6</td>
+<td>2494235.8</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>-25</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">179052</td>
+<td>179052</td>
+<td>1998-11</td>
+<td>11382</td>
+<td>50165.7</td>
+<td>50165.7</td>
+<td>0.0</td>
+<td>5</td>
+<td>2544401.5</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>-26</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">179053</td>
+<td>179053</td>
+<td>1998-12</td>
+<td>11382</td>
+<td>78760.4</td>
+<td>78760.4</td>
+<td>0.0</td>
+<td>5</td>
+<td>2623161.9</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>-27</td>
+</tr>
+</tbody>
+</table>
+
+<p>179054 rows × 12 columns</p>
+</div>
+</div>
+</div>
+</div>
+<div id="cell-58" class="cell" data-execution_count="33">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>filtered_transactions.sort_values(by<span class="op">=</span>[<span class="st">'account_id'</span>, <span class="st">'month_diff'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="33">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">index</th>
+<th data-quarto-table-cell-role="th">month</th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">volume</th>
+<th data-quarto-table-cell-role="th">credit</th>
+<th data-quarto-table-cell-role="th">withdrawal</th>
+<th data-quarto-table-cell-role="th">n_transactions</th>
+<th data-quarto-table-cell-role="th">balance</th>
+<th data-quarto-table-cell-role="th">card_issued</th>
+<th data-quarto-table-cell-role="th">has_card</th>
+<th data-quarto-table-cell-role="th">card_issued_period</th>
+<th data-quarto-table-cell-role="th">month_diff</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">41</td>
+<td>41</td>
+<td>1998-08</td>
+<td>1</td>
+<td>6492.7</td>
+<td>6492.7</td>
+<td>0.0</td>
+<td>5</td>
+<td>338855.2</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">40</td>
+<td>40</td>
+<td>1998-07</td>
+<td>1</td>
+<td>6221.0</td>
+<td>6221.0</td>
+<td>0.0</td>
+<td>4</td>
+<td>332362.5</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">39</td>
+<td>39</td>
+<td>1998-06</td>
+<td>1</td>
+<td>6667.1</td>
+<td>6667.1</td>
+<td>0.0</td>
+<td>5</td>
+<td>326141.5</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">38</td>
+<td>38</td>
+<td>1998-05</td>
+<td>1</td>
+<td>6212.3</td>
+<td>6212.3</td>
+<td>0.0</td>
+<td>4</td>
+<td>319474.4</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">37</td>
+<td>37</td>
+<td>1998-04</td>
+<td>1</td>
+<td>7435.5</td>
+<td>7435.5</td>
+<td>0.0</td>
+<td>6</td>
+<td>313262.1</td>
+<td>1998-09-18</td>
+<td>False</td>
+<td>1998-09</td>
+<td>5</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">179017</td>
+<td>179017</td>
+<td>1995-12</td>
+<td>11382</td>
+<td>82563.6</td>
+<td>82563.6</td>
+<td>0.0</td>
+<td>4</td>
+<td>221665.9</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>9</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">179016</td>
+<td>179016</td>
+<td>1995-11</td>
+<td>11382</td>
+<td>51280.6</td>
+<td>51280.6</td>
+<td>0.0</td>
+<td>4</td>
+<td>139102.3</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>10</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">179015</td>
+<td>179015</td>
+<td>1995-10</td>
+<td>11382</td>
+<td>49912.3</td>
+<td>49912.3</td>
+<td>0.0</td>
+<td>4</td>
+<td>87821.7</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>11</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">179014</td>
+<td>179014</td>
+<td>1995-09</td>
+<td>11382</td>
+<td>37709.4</td>
+<td>37709.4</td>
+<td>0.0</td>
+<td>4</td>
+<td>37909.4</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>12</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">179013</td>
+<td>179013</td>
+<td>1995-08</td>
+<td>11382</td>
+<td>200.0</td>
+<td>200.0</td>
+<td>0.0</td>
+<td>1</td>
+<td>200.0</td>
+<td>1996-09-30</td>
+<td>False</td>
+<td>1996-09</td>
+<td>13</td>
+</tr>
+</tbody>
+</table>
+
+<p>44962 rows × 12 columns</p>
+</div>
+</div>
+</div>
+</div>
+<section id="pivoting-the-transactions" class="level4">
+<h4 class="anchored" data-anchor-id="pivoting-the-transactions">Pivoting the transactions</h4>
+<p>An issue at this point can be that an account may have months without any transactions, so there needs to be a more thorough process to interpolate the data: - <strong>Volume, Withdrawal, Credit and Number of Transactions</strong>: If there are missing months in these variables we can just set <code>0</code> as their value as there has not been any activity if there were no recorded months. - <strong>Balance</strong>: The balance will get recursively set to the last preceding recorded month. So if there are consecutive “missing” months in transactions the balance will always be set to the last recorded month.</p>
+<div id="cell-61" class="cell" data-execution_count="34">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>account_summary <span class="op">=</span> pd.DataFrame(filtered_transactions[<span class="st">'account_id'</span>].unique(), columns<span class="op">=</span>[<span class="st">'account_id'</span>])</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>variables_to_pivot <span class="op">=</span> [<span class="st">'volume'</span>, <span class="st">'withdrawal'</span>, <span class="st">'credit'</span>, <span class="st">'n_transactions'</span>, <span class="st">'balance'</span>]</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> variable <span class="kw">in</span> variables_to_pivot:</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>    grouped <span class="op">=</span> filtered_transactions.groupby([<span class="st">'account_id'</span>, <span class="st">'month_diff'</span>])[variable].<span class="bu">sum</span>().reset_index()</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    pivot <span class="op">=</span> grouped.pivot(index<span class="op">=</span><span class="st">'account_id'</span>, columns<span class="op">=</span><span class="st">'month_diff'</span>, values<span class="op">=</span>variable).reset_index()</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>    pivot.columns <span class="op">=</span> [<span class="st">'account_id'</span>] <span class="op">+</span> [<span class="ss">f'</span><span class="sc">{</span>variable<span class="sc">}</span><span class="ss">_month_diff_</span><span class="sc">{</span><span class="bu">int</span>(col)<span class="sc">}</span><span class="ss">'</span> <span class="cf">if</span> col <span class="op">!=</span> <span class="st">'account_id'</span> <span class="cf">else</span> <span class="st">'account_id'</span> <span class="cf">for</span> col <span class="kw">in</span> pivot.columns[<span class="dv">1</span>:]]</span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>    account_summary <span class="op">=</span> pd.merge(account_summary, pivot, on<span class="op">=</span><span class="st">'account_id'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> variable <span class="kw">in</span> [<span class="st">'volume'</span>, <span class="st">'withdrawal'</span>, <span class="st">'credit'</span>, <span class="st">'n_transactions'</span>]:</span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>    account_summary.update(account_summary.<span class="bu">filter</span>(regex<span class="op">=</span><span class="ss">f'^</span><span class="sc">{</span>variable<span class="sc">}</span><span class="ss">_'</span>).fillna(<span class="dv">0</span>))</span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_last_balance(account_id, starting_month_diff):</span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>    higher_month_diff <span class="op">=</span> transactions_monthly[</span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>        (transactions_monthly[<span class="st">'account_id'</span>] <span class="op">==</span> account_id) <span class="op">&amp;</span> </span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>        (transactions_monthly[<span class="st">'month_diff'</span>] <span class="op">&gt;=</span> starting_month_diff)</span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a>    ].sort_values(<span class="st">'month_diff'</span>)</span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>    last_balance_row <span class="op">=</span> higher_month_diff[higher_month_diff[<span class="st">'balance'</span>].notna()].head(<span class="dv">1</span>)</span>
+<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> last_balance_row.empty:</span>
+<span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> last_balance_row.iloc[<span class="dv">0</span>][<span class="st">'balance'</span>]</span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span></span>
+<span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a>balance_columns <span class="op">=</span> [col <span class="cf">for</span> col <span class="kw">in</span> account_summary.columns <span class="cf">if</span> <span class="st">'balance_month_diff_'</span> <span class="kw">in</span> col]</span>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, row <span class="kw">in</span> account_summary.iterrows():</span>
+<span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> col <span class="kw">in</span> balance_columns:</span>
+<span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> pd.isna(row[col]):</span>
+<span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a>            month_diff <span class="op">=</span> <span class="bu">int</span>(col.split(<span class="st">'_'</span>)[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a>            last_balance <span class="op">=</span> find_last_balance(row[<span class="st">'account_id'</span>], month_diff <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb48-33"><a href="#cb48-33" aria-hidden="true" tabindex="-1"></a>            account_summary.at[idx, col] <span class="op">=</span> last_balance</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-62" class="cell" data-execution_count="35">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>account_summary.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="35">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">account_id</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_1</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_2</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_3</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_4</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_5</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_6</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_7</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_8</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_9</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_10</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_11</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_12</th>
+<th data-quarto-table-cell-role="th">volume_month_diff_13</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_1</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_2</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_3</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_4</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_5</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_6</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_7</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_8</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_9</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_10</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_11</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_12</th>
+<th data-quarto-table-cell-role="th">withdrawal_month_diff_13</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_1</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_2</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_3</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_4</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_5</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_6</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_7</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_8</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_9</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_10</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_11</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_12</th>
+<th data-quarto-table-cell-role="th">credit_month_diff_13</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_1</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_2</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_3</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_4</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_5</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_6</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_7</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_8</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_9</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_10</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_11</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_12</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_diff_13</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_1</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_2</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_3</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_4</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_5</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_6</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_7</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_8</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_9</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_10</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_11</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_12</th>
+<th data-quarto-table-cell-role="th">balance_month_diff_13</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1</td>
+<td>6492.7</td>
+<td>6221.0</td>
+<td>6667.1</td>
+<td>6212.3</td>
+<td>7435.5</td>
+<td>7018.6</td>
+<td>6701.9</td>
+<td>9091.5</td>
+<td>10907.2</td>
+<td>7318.0</td>
+<td>6218.0</td>
+<td>6600.6</td>
+<td>8282.7</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>6492.7</td>
+<td>6221.0</td>
+<td>6667.1</td>
+<td>6212.3</td>
+<td>7435.5</td>
+<td>7018.6</td>
+<td>6701.9</td>
+<td>9091.5</td>
+<td>10907.2</td>
+<td>7318.0</td>
+<td>6218.0</td>
+<td>6600.6</td>
+<td>8282.7</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>6.0</td>
+<td>5.0</td>
+<td>5.0</td>
+<td>10.0</td>
+<td>5.0</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>5.0</td>
+<td>6.0</td>
+<td>338855.2</td>
+<td>332362.5</td>
+<td>326141.5</td>
+<td>319474.4</td>
+<td>313262.1</td>
+<td>305826.6</td>
+<td>298808.0</td>
+<td>292106.1</td>
+<td>283014.6</td>
+<td>272107.4</td>
+<td>264789.4</td>
+<td>258571.4</td>
+<td>251970.8</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2</td>
+<td>34617.6</td>
+<td>45943.4</td>
+<td>52856.1</td>
+<td>47098.6</td>
+<td>52913.9</td>
+<td>37980.7</td>
+<td>31345.5</td>
+<td>23949.5</td>
+<td>1100.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>34617.6</td>
+<td>45943.4</td>
+<td>52856.1</td>
+<td>47098.6</td>
+<td>52913.9</td>
+<td>37980.7</td>
+<td>31345.5</td>
+<td>23949.5</td>
+<td>1100.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>6.0</td>
+<td>7.0</td>
+<td>7.0</td>
+<td>6.0</td>
+<td>3.0</td>
+<td>3.0</td>
+<td>3.0</td>
+<td>3.0</td>
+<td>1.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>327805.3</td>
+<td>293187.7</td>
+<td>247244.3</td>
+<td>194388.2</td>
+<td>147289.6</td>
+<td>94375.7</td>
+<td>56395.0</td>
+<td>25049.5</td>
+<td>1100.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>4</td>
+<td>10917.6</td>
+<td>12013.8</td>
+<td>9011.7</td>
+<td>14254.5</td>
+<td>11343.0</td>
+<td>9015.0</td>
+<td>10769.2</td>
+<td>9003.4</td>
+<td>20249.4</td>
+<td>13529.7</td>
+<td>9040.6</td>
+<td>9031.2</td>
+<td>12329.5</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>10917.6</td>
+<td>12013.8</td>
+<td>9011.7</td>
+<td>14254.5</td>
+<td>11343.0</td>
+<td>9015.0</td>
+<td>10769.2</td>
+<td>9003.4</td>
+<td>20249.4</td>
+<td>13529.7</td>
+<td>9040.6</td>
+<td>9031.2</td>
+<td>12329.5</td>
+<td>6.0</td>
+<td>6.0</td>
+<td>5.0</td>
+<td>6.0</td>
+<td>7.0</td>
+<td>5.0</td>
+<td>6.0</td>
+<td>5.0</td>
+<td>12.0</td>
+<td>7.0</td>
+<td>5.0</td>
+<td>5.0</td>
+<td>6.0</td>
+<td>195475.7</td>
+<td>184558.1</td>
+<td>172544.3</td>
+<td>163532.6</td>
+<td>149278.1</td>
+<td>137935.1</td>
+<td>128920.1</td>
+<td>118150.9</td>
+<td>109147.5</td>
+<td>88898.1</td>
+<td>75368.4</td>
+<td>66327.8</td>
+<td>57296.6</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>5</td>
+<td>8607.1</td>
+<td>7797.2</td>
+<td>15720.3</td>
+<td>10825.1</td>
+<td>7812.5</td>
+<td>5035.1</td>
+<td>5017.0</td>
+<td>5017.0</td>
+<td>5017.0</td>
+<td>5017.0</td>
+<td>600.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>8607.1</td>
+<td>7797.2</td>
+<td>15720.3</td>
+<td>10825.1</td>
+<td>7812.5</td>
+<td>5035.1</td>
+<td>5017.0</td>
+<td>5017.0</td>
+<td>5017.0</td>
+<td>5017.0</td>
+<td>600.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>10.0</td>
+<td>6.0</td>
+<td>4.0</td>
+<td>3.0</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>76465.3</td>
+<td>67858.2</td>
+<td>60061.0</td>
+<td>44340.7</td>
+<td>33515.6</td>
+<td>25703.1</td>
+<td>20668.0</td>
+<td>15651.0</td>
+<td>10634.0</td>
+<td>5617.0</td>
+<td>600.0</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>6</td>
+<td>14333.0</td>
+<td>10810.0</td>
+<td>10798.3</td>
+<td>11989.9</td>
+<td>20888.8</td>
+<td>13055.1</td>
+<td>10807.0</td>
+<td>13039.2</td>
+<td>10792.4</td>
+<td>23857.9</td>
+<td>11865.2</td>
+<td>10815.6</td>
+<td>10803.9</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>14333.0</td>
+<td>10810.0</td>
+<td>10798.3</td>
+<td>11989.9</td>
+<td>20888.8</td>
+<td>13055.1</td>
+<td>10807.0</td>
+<td>13039.2</td>
+<td>10792.4</td>
+<td>23857.9</td>
+<td>11865.2</td>
+<td>10815.6</td>
+<td>10803.9</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>4.0</td>
+<td>5.0</td>
+<td>6.0</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>5.0</td>
+<td>4.0</td>
+<td>11.0</td>
+<td>6.0</td>
+<td>4.0</td>
+<td>4.0</td>
+<td>625481.9</td>
+<td>611148.9</td>
+<td>600338.9</td>
+<td>589540.6</td>
+<td>577550.7</td>
+<td>556661.9</td>
+<td>543606.8</td>
+<td>532799.8</td>
+<td>519760.6</td>
+<td>508968.2</td>
+<td>485110.3</td>
+<td>473245.1</td>
+<td>462429.5</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<div id="cell-63" class="cell" data-execution_count="36">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>client_df <span class="op">=</span> client_df.merge(account_summary, on<span class="op">=</span><span class="st">'account_id'</span>, how<span class="op">=</span><span class="st">'inner'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="bringing-the-data-together" class="level3">
+<h3 class="anchored" data-anchor-id="bringing-the-data-together">Bringing the data together</h3>
+<div id="cell-65" class="cell" data-execution_count="37">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>n_lt_13_month_hist <span class="op">=</span> transactions_monthly[<span class="st">'account_id'</span>].nunique()<span class="op">-</span>filtered_transactions[<span class="st">'account_id'</span>].nunique()</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>preprocessing_summary <span class="op">=</span> [</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>        n_merged_base_client,</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span><span class="bu">len</span>(junior_clients),</span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span>n_lt_13_month_hist,</span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">#-len(non_card_owners)+len(matched_non_buyers_df),</span></span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">-</span><span class="bu">len</span>(client_df)</span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure(go.Waterfall(</span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>        name <span class="op">=</span> <span class="st">"20"</span>, orientation <span class="op">=</span> <span class="st">"v"</span>,</span>
+<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a>        measure <span class="op">=</span> [<span class="st">"absolute"</span>, <span class="st">"relative"</span>, <span class="st">"relative"</span>, <span class="st">"relative"</span>, <span class="st">"total"</span>],</span>
+<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> [<span class="st">"Base Client List"</span>, <span class="st">"Junior Clients"</span>, <span class="st">"Clients with less than 13 Months of Transaction History"</span>, <span class="st">"Non-Card-Holders that were not matched on account activity"</span>, <span class="st">"Remaining Clients"</span>],</span>
+<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a>        textposition <span class="op">=</span> <span class="st">"outside"</span>,</span>
+<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a>        y <span class="op">=</span> preprocessing_summary,</span>
+<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a>        text <span class="op">=</span> [<span class="bu">str</span>(x) <span class="cf">for</span> x <span class="kw">in</span> preprocessing_summary],</span>
+<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a>        connector <span class="op">=</span> {<span class="st">"line"</span>:{<span class="st">"color"</span>:<span class="st">"rgb(63, 63, 63)"</span>}},</span>
+<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb51-20"><a href="#cb51-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-21"><a href="#cb51-21" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb51-22"><a href="#cb51-22" aria-hidden="true" tabindex="-1"></a>        title <span class="op">=</span> <span class="st">"Profit and loss statement 2018"</span>,</span>
+<span id="cb51-23"><a href="#cb51-23" aria-hidden="true" tabindex="-1"></a>        showlegend <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb51-24"><a href="#cb51-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-25"><a href="#cb51-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-26"><a href="#cb51-26" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="exploratory-data-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="exploratory-data-analysis">Exploratory Data Analysis</h2>
+<section id="exploring-missing-values" class="level3">
+<h3 class="anchored" data-anchor-id="exploring-missing-values">Exploring Missing Values</h3>
+<div id="cell-68" class="cell" data-execution_count="38">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>missing_values <span class="op">=</span> client_df.isnull().<span class="bu">sum</span>()</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>missing_values <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Number of Missing Values'</span>: missing_values[missing_values <span class="op">&gt;</span> <span class="dv">0</span>],</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Percentage of Missing Values'</span>: [</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>x<span class="sc">:.2f}</span><span class="ss">%"</span> <span class="cf">for</span> x <span class="kw">in</span> (missing_values[missing_values <span class="op">&gt;</span> <span class="dv">0</span>] <span class="op">/</span> client_df.shape[<span class="dv">0</span>] <span class="op">*</span> <span class="dv">100</span>).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>}, columns<span class="op">=</span>[<span class="st">'Number of Missing Values'</span>, <span class="st">'Percentage of Missing Values'</span>])</span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Bar(</span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>missing_values.index,</span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>missing_values[<span class="st">'Number of Missing Values'</span>],</span>
+<span id="cb53-15"><a href="#cb53-15" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span>missing_values[<span class="st">'Percentage of Missing Values'</span>],</span>
+<span id="cb53-16"><a href="#cb53-16" aria-hidden="true" tabindex="-1"></a>    textposition<span class="op">=</span><span class="st">'auto'</span></span>
+<span id="cb53-17"><a href="#cb53-17" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb53-18"><a href="#cb53-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-19"><a href="#cb53-19" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb53-20"><a href="#cb53-20" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">'Missing Values in the Dataset'</span>,</span>
+<span id="cb53-21"><a href="#cb53-21" aria-hidden="true" tabindex="-1"></a>    xaxis_title<span class="op">=</span><span class="st">'Columns'</span>,</span>
+<span id="cb53-22"><a href="#cb53-22" aria-hidden="true" tabindex="-1"></a>    yaxis_title<span class="op">=</span><span class="st">'Number of Missing Values'</span></span>
+<span id="cb53-23"><a href="#cb53-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb53-24"><a href="#cb53-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-25"><a href="#cb53-25" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+</section>
+<section id="cardholders-vs-non-cardholders" class="level3">
+<h3 class="anchored" data-anchor-id="cardholders-vs-non-cardholders">Cardholders vs Non-Cardholders</h3>
+<div id="cell-70" class="cell" data-execution_count="39">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>card_owners <span class="op">=</span> client_df[client_df[<span class="st">'has_card'</span>]]</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>non_card_owners <span class="op">=</span> client_df[<span class="op">~</span>client_df[<span class="st">'has_card'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-71" class="cell" data-execution_count="40">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Bar(</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>[<span class="st">'Card Owners'</span>, <span class="st">'Non-Card Owners'</span>],</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>[client_df[client_df[<span class="st">'has_card'</span>] <span class="op">==</span> <span class="va">True</span>].shape[<span class="dv">0</span>], client_df[client_df[<span class="st">'has_card'</span>] <span class="op">==</span> <span class="va">False</span>].shape[<span class="dv">0</span>]],</span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span>[card_owners.shape[<span class="dv">0</span>], non_card_owners.shape[<span class="dv">0</span>]],</span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>    textposition<span class="op">=</span><span class="st">'auto'</span></span>
+<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">'Card Owners vs Non-Card Owners'</span>,</span>
+<span id="cb56-12"><a href="#cb56-12" aria-hidden="true" tabindex="-1"></a>    xaxis_title<span class="op">=</span><span class="st">'Card Ownership'</span>,</span>
+<span id="cb56-13"><a href="#cb56-13" aria-hidden="true" tabindex="-1"></a>    yaxis_title<span class="op">=</span><span class="st">'Number of Clients'</span></span>
+<span id="cb56-14"><a href="#cb56-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb56-15"><a href="#cb56-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-16"><a href="#cb56-16" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+</section>
+<section id="card-types" class="level3">
+<h3 class="anchored" data-anchor-id="card-types">Card Types</h3>
+<div id="cell-73" class="cell" data-execution_count="41">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>card_types <span class="op">=</span> card_owners[<span class="st">'card_type'</span>].value_counts()</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Bar(</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>card_types.index,</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>card_types.values,</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span>card_types.values,</span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>    textposition<span class="op">=</span><span class="st">'auto'</span></span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">'Card Types of Card Owners'</span>,</span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>    xaxis_title<span class="op">=</span><span class="st">'Card Type'</span>,</span>
+<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>    yaxis_title<span class="op">=</span><span class="st">'Number of Clients'</span></span>
+<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb58-17"><a href="#cb58-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-18"><a href="#cb58-18" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+</section>
+<section id="volume-before-card-purchase" class="level3">
+<h3 class="anchored" data-anchor-id="volume-before-card-purchase">Volume before card purchase</h3>
+<div id="cell-75" class="cell" data-execution_count="42">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> make_subplots(rows<span class="op">=</span><span class="dv">2</span>, cols<span class="op">=</span><span class="dv">1</span>, subplot_titles<span class="op">=</span>(<span class="st">'Volume of Transactions for Classic Card Holders'</span>, <span class="st">'Volume of Transactions for Gold Card Holders'</span>))</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>card_type_df <span class="op">=</span> card_owners[card_owners[<span class="st">'card_type'</span>] <span class="op">==</span> <span class="st">'classic'</span>]</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> [col <span class="cf">for</span> col <span class="kw">in</span> account_summary.columns <span class="cf">if</span> <span class="st">'volume_month_diff_'</span> <span class="kw">in</span> col]:</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>    month_num <span class="op">=</span> col.split(<span class="st">'_'</span>)[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>    fig.add_trace(go.Violin(</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>        x<span class="op">=</span>[month_num]<span class="op">*</span>card_type_df.shape[<span class="dv">0</span>],</span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>        y<span class="op">=</span>card_type_df[col],</span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>        name<span class="op">=</span>month_num,</span>
+<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>        box_visible<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb60-11"><a href="#cb60-11" aria-hidden="true" tabindex="-1"></a>        meanline_visible<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb60-12"><a href="#cb60-12" aria-hidden="true" tabindex="-1"></a>        showlegend<span class="op">=</span><span class="va">False</span></span>
+<span id="cb60-13"><a href="#cb60-13" aria-hidden="true" tabindex="-1"></a>    ), row<span class="op">=</span><span class="dv">1</span>, col<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb60-14"><a href="#cb60-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-15"><a href="#cb60-15" aria-hidden="true" tabindex="-1"></a>gold_card_type_df <span class="op">=</span> card_owners[card_owners[<span class="st">'card_type'</span>] <span class="op">==</span> <span class="st">'gold'</span>]</span>
+<span id="cb60-16"><a href="#cb60-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> [col <span class="cf">for</span> col <span class="kw">in</span> account_summary.columns <span class="cf">if</span> <span class="st">'volume_month_diff_'</span> <span class="kw">in</span> col]:</span>
+<span id="cb60-17"><a href="#cb60-17" aria-hidden="true" tabindex="-1"></a>    month_num <span class="op">=</span> col.split(<span class="st">'_'</span>)[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb60-18"><a href="#cb60-18" aria-hidden="true" tabindex="-1"></a>    fig.add_trace(go.Violin(</span>
+<span id="cb60-19"><a href="#cb60-19" aria-hidden="true" tabindex="-1"></a>        x<span class="op">=</span>[month_num]<span class="op">*</span>gold_card_type_df.shape[<span class="dv">0</span>],</span>
+<span id="cb60-20"><a href="#cb60-20" aria-hidden="true" tabindex="-1"></a>        y<span class="op">=</span>gold_card_type_df[col],</span>
+<span id="cb60-21"><a href="#cb60-21" aria-hidden="true" tabindex="-1"></a>        name<span class="op">=</span>month_num,</span>
+<span id="cb60-22"><a href="#cb60-22" aria-hidden="true" tabindex="-1"></a>        box_visible<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb60-23"><a href="#cb60-23" aria-hidden="true" tabindex="-1"></a>        meanline_visible<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb60-24"><a href="#cb60-24" aria-hidden="true" tabindex="-1"></a>        showlegend<span class="op">=</span><span class="va">False</span></span>
+<span id="cb60-25"><a href="#cb60-25" aria-hidden="true" tabindex="-1"></a>    ), row<span class="op">=</span><span class="dv">2</span>, col<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb60-26"><a href="#cb60-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-27"><a href="#cb60-27" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb60-28"><a href="#cb60-28" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">'Volume of Transactions by Card Type'</span>,</span>
+<span id="cb60-29"><a href="#cb60-29" aria-hidden="true" tabindex="-1"></a>    xaxis_title<span class="op">=</span><span class="st">'Months before purchase'</span>,</span>
+<span id="cb60-30"><a href="#cb60-30" aria-hidden="true" tabindex="-1"></a>    xaxis2_title<span class="op">=</span><span class="st">'Months before purchase'</span>,</span>
+<span id="cb60-31"><a href="#cb60-31" aria-hidden="true" tabindex="-1"></a>    yaxis_title<span class="op">=</span><span class="st">'Volume of Transactions'</span>,</span>
+<span id="cb60-32"><a href="#cb60-32" aria-hidden="true" tabindex="-1"></a>    yaxis2_title<span class="op">=</span><span class="st">'Volume of Transactions'</span>,</span>
+<span id="cb60-33"><a href="#cb60-33" aria-hidden="true" tabindex="-1"></a>    height<span class="op">=</span><span class="dv">1200</span></span>
+<span id="cb60-34"><a href="#cb60-34" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb60-35"><a href="#cb60-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-36"><a href="#cb60-36" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+</section>
+<section id="age-distribution" class="level3">
+<h3 class="anchored" data-anchor-id="age-distribution">Age distribution</h3>
+<div id="cell-77" class="cell" data-execution_count="43">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Histogram(x<span class="op">=</span>card_owners[<span class="st">'client_age'</span>], histnorm<span class="op">=</span><span class="st">'percent'</span>, name<span class="op">=</span><span class="st">'Card Owners'</span>, nbinsx<span class="op">=</span><span class="dv">20</span>))</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Histogram(x<span class="op">=</span>non_card_owners[<span class="st">'client_age'</span>], histnorm<span class="op">=</span><span class="st">'percent'</span>, name<span class="op">=</span><span class="st">'Non-Card Owners'</span>, nbinsx<span class="op">=</span><span class="dv">20</span>))</span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>fig.update_traces(marker_line_width<span class="op">=</span><span class="dv">1</span>, marker_line_color<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a>fig.update_layout(</span>
+<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">'Distribution of Client Age'</span>,</span>
+<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a>    xaxis_title<span class="op">=</span><span class="st">'Age'</span>,</span>
+<span id="cb62-11"><a href="#cb62-11" aria-hidden="true" tabindex="-1"></a>    yaxis_title<span class="op">=</span><span class="st">'Percentage of Clients'</span></span>
+<span id="cb62-12"><a href="#cb62-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb62-13"><a href="#cb62-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-14"><a href="#cb62-14" aria-hidden="true" tabindex="-1"></a>fig.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="train-test-split" class="level2">
+<h2 class="anchored" data-anchor-id="train-test-split">Train-Test-Split</h2>
+<div id="cell-79" class="cell" data-execution_count="44">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> client_df</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> X[<span class="st">'has_card'</span>]</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> X.drop(columns<span class="op">=</span>[<span class="st">'has_card'</span>, <span class="st">'card_id'</span>, <span class="st">'card_issued'</span>, <span class="st">'card_type'</span>])</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(X, y, test_size<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">1337</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-80" class="cell" data-execution_count="45">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Train set:'</span>)</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_train.value_counts(normalize<span class="op">=</span><span class="va">True</span>))</span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'</span><span class="ch">\n</span><span class="st">Test set:'</span>)</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_test.value_counts(normalize<span class="op">=</span><span class="va">True</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Train set:
+has_card
+False    0.811787
+True     0.188213
+Name: proportion, dtype: float64
+
+Test set:
+has_card
+False    0.806084
+True     0.193916
+Name: proportion, dtype: float64</code></pre>
+</div>
+</div>
+</section>
+<section id="baseline-model" class="level2">
+<h2 class="anchored" data-anchor-id="baseline-model">Baseline Model</h2>
+<p>Erstellen eines Baseline Modelles mittels logistischer Regression und den Informationen “Alter”, “Geschlecht”, “Domizilregion”, “Vermögen” und “Umsatz” vor Kreditkartenkauf.</p>
+<div id="cell-82" class="cell" data-execution_count="46">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scripts.utils <span class="im">import</span> evaluate_model</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-83" class="cell" data-execution_count="47">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder, StandardScaler</span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>baseline_column_selection <span class="op">=</span> client_df[[<span class="st">'client_age'</span>, <span class="st">'client_gender'</span>, <span class="st">'client_district_region'</span>]]</span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>client_vol_bal_cols <span class="op">=</span> client_df.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">'(volume|balance)'</span>, axis<span class="op">=</span><span class="dv">1</span>).columns</span>
+<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>baseline_column_selection <span class="op">=</span> pd.concat([baseline_column_selection, client_df[client_vol_bal_cols]], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-10"><a href="#cb68-10" aria-hidden="true" tabindex="-1"></a>baseline_cat_columns <span class="op">=</span> baseline_column_selection.select_dtypes(include<span class="op">=</span>[<span class="st">'object'</span>])</span>
+<span id="cb68-11"><a href="#cb68-11" aria-hidden="true" tabindex="-1"></a>baseline_num_columns <span class="op">=</span> baseline_column_selection.select_dtypes(exclude<span class="op">=</span>[<span class="st">'object'</span>])</span>
+<span id="cb68-12"><a href="#cb68-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-13"><a href="#cb68-13" aria-hidden="true" tabindex="-1"></a>preprocessor <span class="op">=</span> ColumnTransformer(</span>
+<span id="cb68-14"><a href="#cb68-14" aria-hidden="true" tabindex="-1"></a>    transformers<span class="op">=</span>[</span>
+<span id="cb68-15"><a href="#cb68-15" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'num'</span>, StandardScaler(), baseline_num_columns.columns),</span>
+<span id="cb68-16"><a href="#cb68-16" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'cat'</span>, OneHotEncoder(handle_unknown<span class="op">=</span><span class="st">'ignore'</span>), baseline_cat_columns.columns)</span>
+<span id="cb68-17"><a href="#cb68-17" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb68-18"><a href="#cb68-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-19"><a href="#cb68-19" aria-hidden="true" tabindex="-1"></a>base_pipeline <span class="op">=</span> Pipeline([</span>
+<span id="cb68-20"><a href="#cb68-20" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'preprocessor'</span>, preprocessor),</span>
+<span id="cb68-21"><a href="#cb68-21" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'classifier'</span>, LogisticRegression(max_iter<span class="op">=</span><span class="dv">1000</span>))</span>
+<span id="cb68-22"><a href="#cb68-22" aria-hidden="true" tabindex="-1"></a>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-84" class="cell" data-execution_count="48">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>results_df <span class="op">=</span> evaluate_model(pipeline<span class="op">=</span>base_pipeline, X<span class="op">=</span>baseline_column_selection, y<span class="op">=</span>client_df[<span class="st">'has_card'</span>], model_name<span class="op">=</span><span class="st">'Baseline LogReg'</span>)</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(results_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/cell-49-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/cell-49-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Accuracy  Precision   Recall  F1 Score   ROC AUC
+0   0.81749   0.783307  0.81749  0.782554  0.795652</code></pre>
+</div>
+</div>
+<section id="generating-event-based-customer-information" class="level3">
+<h3 class="anchored" data-anchor-id="generating-event-based-customer-information">Generating Event-Based Customer Information</h3>
+</section>
+</section>
+<section id="feature-engineering" class="level2">
+<h2 class="anchored" data-anchor-id="feature-engineering">Feature Engineering</h2>
+<section id="deriving-new-features" class="level3">
+<h3 class="anchored" data-anchor-id="deriving-new-features">Deriving New Features</h3>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
