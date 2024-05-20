@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scikitplot as skplt
+from matplotlib.ticker import FuncFormatter
 from sklearn.model_selection import cross_val_predict, StratifiedKFold
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
@@ -83,18 +84,13 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
 
 
 def evaluate_model(pipeline, X, y, model_name=None):
-    # Configure Seaborn aesthetics
     sns.set(style="whitegrid")
 
-    # Determine model name
     if not model_name:
-        # Attempt to get the class name of the last step in the pipeline (typically the estimator)
         model_name = pipeline.steps[-1][1].__class__.__name__ if pipeline.steps else "Estimator"
 
-    # Setup Stratified K-Fold for cross-validation
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
-    # Store metrics for each fold
     metrics_list = []
 
     for train_index, test_index in skf.split(X, y):
@@ -113,19 +109,17 @@ def evaluate_model(pipeline, X, y, model_name=None):
             'ROC AUC': roc_auc_score(y_test, y_prob)
         })
     
-    # Calculate mean and standard deviation of metrics
     metrics_df = pd.DataFrame(metrics_list)
     metrics_mean = metrics_df.mean()
     metrics_std = metrics_df.std()
 
-    # Create a DataFrame with mean and std of metrics
     metrics_summary_df = pd.DataFrame({
         'Metric': metrics_mean.index,
         'Mean': metrics_mean.values,
         'Std': metrics_std.values
     })
 
-    # Plot metrics with error bars
+    # Metrics barplot with error bars
     plt.figure(figsize=(10, 6))
     ax = sns.barplot(x='Metric', y='Mean', data=metrics_summary_df, capsize=0.2, palette='viridis', hue='Metric')
     plt.ylabel('Score')
@@ -133,7 +127,7 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.title(f'{model_name} Performance Metrics with Standard Deviation')
     plt.show()
 
-    # Create ROC Curve
+    # ROC Curve
     y_prob = cross_val_predict(pipeline, X, y, cv=skf, method='predict_proba')
     fpr, tpr, _ = roc_curve(y, y_prob[:, 1])
     plt.figure(figsize=(18, 5))
@@ -146,7 +140,7 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
 
-    # Create Precision-Recall Curve
+    # Precision-Recall Curve
     precision, recall, _ = precision_recall_curve(y, y_prob[:, 1])
     plt.subplot(1, 3, 2)
     sns.lineplot(x=recall, y=precision, label=f'{model_name} Precision-Recall')
@@ -154,7 +148,7 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
     
-    # Create Confusion Matrix Plot
+    # Confusion Matrix Plot
     y_pred = cross_val_predict(pipeline, X, y, cv=skf)
     cm = confusion_matrix(y, y_pred)
     plt.subplot(1, 3, 3)
@@ -166,9 +160,53 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.tight_layout()
     plt.show()
 
-    # Create a lift curve
+    # Lift curve
     skplt.metrics.plot_lift_curve(y, y_prob)
     plt.title(f'{model_name} Lift Curve')
     plt.show()
 
     return metrics_summary_df
+
+
+def large_number_formatter(x, pos):
+    if x >= 1e6:
+        return f'{x / 1e6:.1f}M'
+    elif x >= 1e3:
+        return f'{x / 1e3:.1f}K'
+    else:
+        return f'{x:.0f}'
+
+
+def plot_agg_variables(client_df, metric_prefix, aggfuncs=['mean']):
+    columns = [f'{metric_prefix}_month_diff_{i}' for i in range(1, 14)]
+    
+    num_plots = len(aggfuncs)
+    
+    num_cols = 2
+    num_rows = (num_plots + num_cols - 1) // num_cols
+    
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(16, 5 * num_rows))
+    
+    axes = axes.flatten()
+    
+    for ax, aggfunc in zip(axes, aggfuncs):
+        summary = client_df.groupby('has_card')[columns].agg(aggfunc).T
+        
+        summary.columns = ['No Card', 'Has Card']
+        summary.index = range(1, 14)
+        
+        sns.lineplot(data=summary, markers=["o", "o"], dashes=False, ax=ax)
+        ax.set_xlabel('Month')  
+        ax.set_ylabel(f'{aggfunc.capitalize()} {metric_prefix.capitalize()}')
+        ax.set_title(f'{aggfunc.capitalize()} {metric_prefix.capitalize()} Over Time by Card Ownership')
+        ax.legend(title='Card Ownership')
+        ax.grid(True)
+        ax.set_xticks(range(1, 14))
+        
+        ax.yaxis.set_major_formatter(FuncFormatter(large_number_formatter))
+    
+    for i in range(len(aggfuncs), len(axes)):
+        fig.delaxes(axes[i])
+    
+    plt.tight_layout()
+    plt.show()
