@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -8,7 +9,7 @@ import seaborn as sns
 import scikitplot as skplt
 from sklearn.model_selection import cross_val_predict, StratifiedKFold
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
-                             f1_score, roc_auc_score, roc_curve, precision_recall_curve)
+                             f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
 
 def add_prefix_except_id(df, prefix, id_exceptions=[]):
     """
@@ -93,24 +94,51 @@ def evaluate_model(pipeline, X, y, model_name=None):
     # Setup Stratified K-Fold for cross-validation
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
-    # Cross-validated predictions for metrics and probabilities
-    y_pred = cross_val_predict(pipeline, X, y, cv=skf)
-    y_prob = cross_val_predict(pipeline, X, y, cv=skf, method='predict_proba')
+    # Store metrics for each fold
+    metrics_list = []
 
-    # Calculate metrics
-    metrics = {
-        'Accuracy': accuracy_score(y, y_pred),
-        'Precision': precision_score(y, y_pred, average='weighted'),
-        'Recall': recall_score(y, y_pred, average='weighted'),
-        'F1 Score': f1_score(y, y_pred, average='weighted'),
-        'ROC AUC': roc_auc_score(y, y_prob[:, 1])
-    }
+    for train_index, test_index in skf.split(X, y):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_test)
+        y_prob = pipeline.predict_proba(X_test)[:, 1]
+        
+        metrics_list.append({
+            'Accuracy': accuracy_score(y_test, y_pred),
+            'Precision': precision_score(y_test, y_pred, average='weighted'),
+            'Recall': recall_score(y_test, y_pred, average='weighted'),
+            'F1 Score': f1_score(y_test, y_pred, average='weighted'),
+            'ROC AUC': roc_auc_score(y_test, y_prob)
+        })
+    
+    # Calculate mean and standard deviation of metrics
+    metrics_df = pd.DataFrame(metrics_list)
+    metrics_mean = metrics_df.mean()
+    metrics_std = metrics_df.std()
+
+    # Create a DataFrame with mean and std of metrics
+    metrics_summary_df = pd.DataFrame({
+        'Metric': metrics_mean.index,
+        'Mean': metrics_mean.values,
+        'Std': metrics_std.values
+    })
+
+    # Plot metrics with error bars
+    plt.figure(figsize=(10, 6))
+    ax = sns.barplot(x='Metric', y='Mean', data=metrics_summary_df, capsize=0.2, palette='viridis', hue='Metric')
+    plt.ylabel('Score')
+    ax.errorbar(x=metrics_summary_df['Metric'], y=metrics_summary_df['Mean'], yerr=metrics_summary_df['Std'], fmt=' ', c='k')
+    plt.title(f'{model_name} Performance Metrics with Standard Deviation')
+    plt.show()
 
     # Create ROC Curve
+    y_prob = cross_val_predict(pipeline, X, y, cv=skf, method='predict_proba')
     fpr, tpr, _ = roc_curve(y, y_prob[:, 1])
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    sns.lineplot(x=fpr, y=tpr, label=f'{model_name} ROC (area = {metrics["ROC AUC"]:.2f})')
+    plt.figure(figsize=(18, 5))
+    plt.subplot(1, 3, 1)
+    sns.lineplot(x=fpr, y=tpr, label=f'{model_name} ROC (area = {metrics_mean["ROC AUC"]:.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
@@ -120,11 +148,21 @@ def evaluate_model(pipeline, X, y, model_name=None):
 
     # Create Precision-Recall Curve
     precision, recall, _ = precision_recall_curve(y, y_prob[:, 1])
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 2)
     sns.lineplot(x=recall, y=precision, label=f'{model_name} Precision-Recall')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
+    
+    # Create Confusion Matrix Plot
+    y_pred = cross_val_predict(pipeline, X, y, cv=skf)
+    cm = confusion_matrix(y, y_pred)
+    plt.subplot(1, 3, 3)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, xticklabels=np.unique(y), yticklabels=np.unique(y))
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+
     plt.tight_layout()
     plt.show()
 
@@ -133,5 +171,4 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.title(f'{model_name} Lift Curve')
     plt.show()
 
-    # Return metrics as a DataFrame for easy viewing
-    return pd.DataFrame(metrics, index=[0])
+    return metrics_summary_df
