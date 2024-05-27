@@ -3,12 +3,12 @@ import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.linear_model import LogisticRegression
+from sklearn.utils import resample
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scikitplot as skplt
 from matplotlib.ticker import FuncFormatter
-from sklearn.model_selection import cross_val_predict, StratifiedKFold
+from sklearn.model_selection import cross_val_predict, StratifiedKFold, GridSearchCV
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
 
@@ -83,13 +83,30 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
     return pipeline
 
 
-def evaluate_model(pipeline, X, y, model_name=None):
-    sns.set(style="whitegrid")
+def undersample(X, y):
+    df = pd.concat([X, y], axis=1)
+    
+    majority_class = df[df[y.name] == y.value_counts().idxmax()]
+    minority_class = df[df[y.name] == y.value_counts().idxmin()]
+    
+    majority_downsampled = resample(majority_class, 
+                                    replace=False,
+                                    n_samples=len(minority_class),
+                                    random_state=1337)
+    
+    downsampled = pd.concat([majority_downsampled, minority_class])
+    
+    return downsampled.drop(columns=[y.name]), downsampled[y.name]
 
-    if not model_name:
-        model_name = pipeline.steps[-1][1].__class__.__name__ if pipeline.steps else "Estimator"
 
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+def cross_validate(pipeline, param_grid, X, y, n_splits=5):
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=1337)
+    
+    grid_search = GridSearchCV(pipeline, param_grid, cv=skf, n_jobs=-1)
+    grid_search.fit(X, y)
+
+    best_estimator = grid_search.best_estimator_
+    best_params = grid_search.best_params_
     
     metrics_list = []
     roc_curves = []
@@ -101,9 +118,11 @@ def evaluate_model(pipeline, X, y, model_name=None):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
-        pipeline.fit(X_train, y_train)
-        y_pred = pipeline.predict(X_test)
-        y_prob = pipeline.predict_proba(X_test)[:, 1]
+        X_train_balanced, y_train_balanced = undersample(X_train, y_train)
+        
+        best_estimator.fit(X_train_balanced, y_train_balanced)
+        y_pred = best_estimator.predict(X_test)
+        y_prob = best_estimator.predict_proba(X_test)[:, 1]
         
         metrics_list.append({
             'Accuracy': accuracy_score(y_test, y_pred),
@@ -115,23 +134,27 @@ def evaluate_model(pipeline, X, y, model_name=None):
 
         fpr, tpr, _ = roc_curve(y_test, y_prob)
         precision, recall, _ = precision_recall_curve(y_test, y_prob)
-        
+
         roc_curves.append((fpr, tpr))
         pr_curves.append((precision, recall))
         lift_probs.append(y_prob)
         true_labels.append(y_test)
     
     metrics_df = pd.DataFrame(metrics_list)
+    
+    return best_estimator, best_params, metrics_df, roc_curves, pr_curves, lift_probs, true_labels
+
+
+def plot_metrics(metrics_df, model_name):
     metrics_mean = metrics_df.mean()
     metrics_std = metrics_df.std()
-
+    
     metrics_summary_df = pd.DataFrame({
         'Metric': metrics_mean.index,
         'Mean': metrics_mean.values,
         'Std': metrics_std.values
     })
-
-    # Metrics barplot with error bars
+    
     plt.figure(figsize=(10, 6))
     ax = sns.barplot(x='Metric', y='Mean', data=metrics_summary_df, capsize=0.2, palette='viridis', hue='Metric')
     plt.ylabel('Score')
@@ -139,9 +162,8 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.title(f'{model_name} Performance Metrics with Standard Deviation')
     plt.show()
 
-    # ROC Curve
-    plt.figure(figsize=(18, 5))
-    plt.subplot(1, 3, 1)
+def plot_roc_curve(roc_curves, metrics_mean, model_name):
+    plt.figure(figsize=(6, 6))
     for fpr, tpr in roc_curves:
         plt.plot(fpr, tpr, alpha=0.3)
     mean_fpr = np.linspace(0, 1, 100)
@@ -154,9 +176,10 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc='lower right')
+    plt.show()
 
-    # Precision-Recall Curve
-    plt.subplot(1, 3, 2)
+def plot_precision_recall_curve(pr_curves, model_name):
+    plt.figure(figsize=(6, 6))
     for precision, recall in pr_curves:
         plt.plot(recall, precision, alpha=0.3)
     mean_precision = np.linspace(0, 1, 100)
@@ -166,27 +189,24 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
     plt.legend(loc='lower left')
-    
-    # Confusion Matrix Plot
-    y_pred = cross_val_predict(pipeline, X, y, cv=skf)
-    cm = confusion_matrix(y, y_pred)
-    plt.subplot(1, 3, 3)
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, xticklabels=np.unique(y), yticklabels=np.unique(y))
-    plt.xlabel('Predicted')
-    plt.ylabel('Actual')
-    plt.title('Confusion Matrix')
-
-    plt.tight_layout()
     plt.show()
 
-    # Lift curve
+def plot_confusion_matrix(best_estimator, X_test, y_test, model_name):
+    y_pred = best_estimator.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title(f'{model_name} Confusion Matrix')
+    plt.show()
+
+def plot_lift_curve(lift_probs, true_labels, model_name):
     y_prob = np.concatenate(lift_probs)
     y_true = np.concatenate(true_labels)
     skplt.metrics.plot_lift_curve(y_true, np.vstack([1 - y_prob, y_prob]).T)
     plt.title(f'{model_name} Lift Curve')
     plt.show()
 
-    return metrics_summary_df
 
 
 def large_number_formatter(x, pos):
