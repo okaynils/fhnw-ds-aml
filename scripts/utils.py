@@ -99,14 +99,18 @@ def undersample(X, y):
     return downsampled.drop(columns=[y.name]), downsampled[y.name]
 
 
-def cross_validate(pipeline, param_grid, X, y, n_splits=5):
+def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=1337)
     
-    grid_search = GridSearchCV(pipeline, param_grid, cv=skf, n_jobs=-1)
-    grid_search.fit(X, y)
+    best_estimator = pipeline
+    best_params = None
+    
+    if param_grid is not None:
+        grid_search = GridSearchCV(pipeline, param_grid, cv=skf, n_jobs=-1)
+        grid_search.fit(X, y)
 
-    best_estimator = grid_search.best_estimator_
-    best_params = grid_search.best_params_
+        best_estimator = grid_search.best_estimator_
+        best_params = grid_search.best_params_
     
     metrics_list = []
     roc_curves = []
