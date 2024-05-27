@@ -92,6 +92,10 @@ def evaluate_model(pipeline, X, y, model_name=None):
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
     metrics_list = []
+    roc_curves = []
+    pr_curves = []
+    lift_probs = []
+    true_labels = []
 
     for train_index, test_index in skf.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
@@ -108,6 +112,14 @@ def evaluate_model(pipeline, X, y, model_name=None):
             'F1 Score': f1_score(y_test, y_pred, average='weighted'),
             'ROC AUC': roc_auc_score(y_test, y_prob)
         })
+
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        precision, recall, _ = precision_recall_curve(y_test, y_prob)
+        
+        roc_curves.append((fpr, tpr))
+        pr_curves.append((precision, recall))
+        lift_probs.append(y_prob)
+        true_labels.append(y_test)
     
     metrics_df = pd.DataFrame(metrics_list)
     metrics_mean = metrics_df.mean()
@@ -128,25 +140,32 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.show()
 
     # ROC Curve
-    y_prob = cross_val_predict(pipeline, X, y, cv=skf, method='predict_proba')
-    fpr, tpr, _ = roc_curve(y, y_prob[:, 1])
     plt.figure(figsize=(18, 5))
     plt.subplot(1, 3, 1)
-    sns.lineplot(x=fpr, y=tpr, label=f'{model_name} ROC (area = {metrics_mean["ROC AUC"]:.2f})')
+    for fpr, tpr in roc_curves:
+        plt.plot(fpr, tpr, alpha=0.3)
+    mean_fpr = np.linspace(0, 1, 100)
+    mean_tpr = np.mean([np.interp(mean_fpr, fpr, tpr) for fpr, tpr in roc_curves], axis=0)
+    plt.plot(mean_fpr, mean_tpr, label=f'{model_name} Mean ROC (area = {metrics_mean["ROC AUC"]:.2f})', color='b')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
+    plt.legend(loc='lower right')
 
     # Precision-Recall Curve
-    precision, recall, _ = precision_recall_curve(y, y_prob[:, 1])
     plt.subplot(1, 3, 2)
-    sns.lineplot(x=recall, y=precision, label=f'{model_name} Precision-Recall')
+    for precision, recall in pr_curves:
+        plt.plot(recall, precision, alpha=0.3)
+    mean_precision = np.linspace(0, 1, 100)
+    mean_recall = np.mean([np.interp(mean_precision, recall[::-1], precision[::-1]) for precision, recall in pr_curves], axis=0)
+    plt.plot(mean_precision, mean_recall, label=f'{model_name} Mean PR', color='b')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
+    plt.legend(loc='lower left')
     
     # Confusion Matrix Plot
     y_pred = cross_val_predict(pipeline, X, y, cv=skf)
@@ -161,7 +180,9 @@ def evaluate_model(pipeline, X, y, model_name=None):
     plt.show()
 
     # Lift curve
-    skplt.metrics.plot_lift_curve(y, y_prob)
+    y_prob = np.concatenate(lift_probs)
+    y_true = np.concatenate(true_labels)
+    skplt.metrics.plot_lift_curve(y_true, np.vstack([1 - y_prob, y_prob]).T)
     plt.title(f'{model_name} Lift Curve')
     plt.show()
 
