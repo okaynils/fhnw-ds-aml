@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scikitplot as skplt
 from matplotlib.ticker import FuncFormatter
+from sklearn.model_selection import train_test_split
+from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import cross_val_predict, StratifiedKFold, GridSearchCV
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
@@ -51,6 +53,22 @@ class DateToUnixTimestampTransformer(BaseEstimator, TransformerMixin):
         X_transformed['Date'] = X_transformed['Date'].astype('int64') // 10**9
         return X_transformed
 
+
+def train_test_split_bal(df, target_column, test_size=0.2, random_state=1337, balancing_technique=None):
+    X = df.drop(columns=[target_column])
+    y = df[target_column]
+    
+    if balancing_technique == 'undersample':
+        rus = RandomUnderSampler(random_state=random_state)
+        X_res, y_res = rus.fit_resample(X, y)
+    else:
+        X_res, y_res = X, y
+    
+    X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=test_size, random_state=random_state)
+    
+    return X_train, X_test, y_train, y_test
+
+
 def create_pipeline(categorical_features, numerical_features, estimator: BaseEstimator):
     """
     Creates a pipeline with specified categorical and numerical features.
@@ -83,22 +101,6 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
     return pipeline
 
 
-def undersample(X, y):
-    df = pd.concat([X, y], axis=1)
-    
-    majority_class = df[df[y.name] == y.value_counts().idxmax()]
-    minority_class = df[df[y.name] == y.value_counts().idxmin()]
-    
-    majority_downsampled = resample(majority_class, 
-                                    replace=False,
-                                    n_samples=len(minority_class),
-                                    random_state=1337)
-    
-    downsampled = pd.concat([majority_downsampled, minority_class])
-    
-    return downsampled.drop(columns=[y.name]), downsampled[y.name]
-
-
 def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=1337)
     
@@ -122,9 +124,7 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
-        X_train_balanced, y_train_balanced = undersample(X_train, y_train)
-        
-        best_estimator.fit(X_train_balanced, y_train_balanced)
+        best_estimator.fit(X_train, y_train)
         y_pred = best_estimator.predict(X_test)
         y_prob = best_estimator.predict_proba(X_test)[:, 1]
         
@@ -178,7 +178,7 @@ def plot_roc_curve(roc_curves, metrics_mean, model_name):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
+    plt.suptitle('Receiver Operating Characteristic')
     plt.legend(loc='lower right')
     plt.show()
 
