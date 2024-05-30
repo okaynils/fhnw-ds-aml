@@ -15,22 +15,8 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
 
 def add_prefix_except_id(df, prefix, id_exceptions=[]):
-    """
-    Adds a prefix to all column names in the DataFrame except those containing '_id' or 'id_', 
-    with an exception for any column names explicitly listed in id_exceptions.
-
-    Parameters:
-    - df: pandas.DataFrame to be modified.
-    - prefix: String prefix to be added.
-    - id_exceptions: List of column names that contain '_id' or 'id_' but should still have the prefix added.
-
-    Returns:
-    - A new DataFrame with updated column names.
-    """
-    # Define a new DataFrame to avoid modifying the original one
     new_df = df.copy()
     
-    # Rename columns, adding prefix based on the conditions
     new_df.columns = [
         f'{prefix}{col}' if (('_id' not in col and 'id_' not in col) or col in id_exceptions) else col 
         for col in df.columns
@@ -45,10 +31,9 @@ class DateToUnixTimestampTransformer(BaseEstimator, TransformerMixin):
         pass
 
     def fit(self, X, y=None):
-        return self  # nothing to fit
+        return self
 
     def transform(self, X, y=None):
-        # Assuming 'Date' is the column to be transformed
         X_transformed = X.copy()
         X_transformed['Date'] = X_transformed['Date'].astype('int64') // 10**9
         return X_transformed
@@ -70,16 +55,6 @@ def train_test_split_bal(df, target_column, test_size=0.2, random_state=1337, ba
 
 
 def create_pipeline(categorical_features, numerical_features, estimator: BaseEstimator):
-    """
-    Creates a pipeline with specified categorical and numerical features.
-    
-    Parameters:
-    - categorical_features: list of strings, names of the categorical columns
-    - numerical_features: list of strings, names of the numerical columns
-    
-    Returns:
-    - A Scikit-Learn Pipeline object configured for the specified features.
-    """
     categorical_preprocessor = Pipeline(steps=[
         ('onehot', OneHotEncoder(drop='first'))
     ])
@@ -99,6 +74,32 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
     ])
     
     return pipeline
+
+
+def build_preprocessor_pipeline(X_train, X_test, include_columns=None, regex_columns=None):
+    if include_columns is None:
+        include_columns = X_train.columns.tolist()
+    
+    column_selection = X_train[include_columns]
+    
+    if regex_columns:
+        additional_columns = X_train.filter(regex=regex_columns, axis=1).columns
+        column_selection = pd.concat([column_selection, X_train[additional_columns]], axis=1)
+    
+    cat_columns = column_selection.select_dtypes(include=['object'])
+    num_columns = column_selection.select_dtypes(exclude=['object'])
+    
+    column_selection_test = X_test[include_columns]
+    if regex_columns:
+        column_selection_test = pd.concat([column_selection_test, X_test[additional_columns]], axis=1)
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), num_columns.columns),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns.columns)
+        ])
+    
+    return preprocessor, column_selection, column_selection_test
 
 
 def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
