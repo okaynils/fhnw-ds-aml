@@ -164,8 +164,15 @@ def plot_metrics(metrics_df, model_name):
     ax = sns.barplot(x='Metric', y='Mean', data=metrics_summary_df, capsize=0.2, palette='viridis', hue='Metric')
     plt.ylabel('Score')
     ax.errorbar(x=metrics_summary_df['Metric'], y=metrics_summary_df['Mean'], yerr=metrics_summary_df['Std'], fmt=' ', c='k')
+    
+    for i in range(len(metrics_summary_df)):
+        ax.text(i, metrics_summary_df['Mean'][i] + metrics_summary_df['Std'][i], 
+                f"{metrics_summary_df['Mean'][i]:.2f} ± {metrics_summary_df['Std'][i]:.2f}", 
+                ha='center', va='bottom')
+    
     plt.title(f'{model_name} Performance Metrics with Standard Deviation')
     plt.show()
+
 
 def plot_roc_curve(roc_curves, metrics_mean, model_name):
     plt.figure(figsize=(6, 6))
@@ -183,6 +190,7 @@ def plot_roc_curve(roc_curves, metrics_mean, model_name):
     plt.legend(loc='lower right')
     plt.show()
 
+
 def plot_precision_recall_curve(pr_curves, model_name):
     plt.figure(figsize=(6, 6))
     for precision, recall in pr_curves:
@@ -196,6 +204,7 @@ def plot_precision_recall_curve(pr_curves, model_name):
     plt.legend(loc='lower left')
     plt.show()
 
+
 def plot_confusion_matrix(best_estimator, X_test, y_test, model_name):
     y_pred = best_estimator.predict(X_test)
     cm = confusion_matrix(y_test, y_pred)
@@ -205,13 +214,13 @@ def plot_confusion_matrix(best_estimator, X_test, y_test, model_name):
     plt.title(f'{model_name} Confusion Matrix')
     plt.show()
 
+
 def plot_lift_curve(lift_probs, true_labels, model_name):
     y_prob = np.concatenate(lift_probs)
     y_true = np.concatenate(true_labels)
     skplt.metrics.plot_lift_curve(y_true, np.vstack([1 - y_prob, y_prob]).T)
     plt.title(f'{model_name} Lift Curve')
     plt.show()
-
 
 
 def large_number_formatter(x, pos):
