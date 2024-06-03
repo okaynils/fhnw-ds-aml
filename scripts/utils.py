@@ -80,14 +80,14 @@ def build_preprocessor_pipeline(X_train, X_test, include_columns=None, regex_col
     if include_columns is None:
         include_columns = X_train.columns.tolist()
     
-    column_selection = X_train[include_columns]
+    column_selection_train = X_train[include_columns]
     
     if regex_columns:
         additional_columns = X_train.filter(regex=regex_columns, axis=1).columns
-        column_selection = pd.concat([column_selection, X_train[additional_columns]], axis=1)
+        column_selection_train = pd.concat([column_selection_train, X_train[additional_columns]], axis=1)
     
-    cat_columns = column_selection.select_dtypes(include=['object'])
-    num_columns = column_selection.select_dtypes(exclude=['object'])
+    cat_columns = column_selection_train.select_dtypes(include=['object'])
+    num_columns = column_selection_train.select_dtypes(exclude=['object'])
     
     column_selection_test = X_test[include_columns]
     if regex_columns:
@@ -99,7 +99,7 @@ def build_preprocessor_pipeline(X_train, X_test, include_columns=None, regex_col
             ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns.columns)
         ])
     
-    return preprocessor, column_selection, column_selection_test
+    return preprocessor, column_selection_train, column_selection_test
 
 
 def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
