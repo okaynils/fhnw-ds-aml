@@ -43,13 +43,11 @@ def train_test_split_bal(df, target_column, test_size=0.2, random_state=1337, ba
     X = df.drop(columns=[target_column])
     y = df[target_column]
     
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+    
     if balancing_technique == 'undersample':
         rus = RandomUnderSampler(random_state=random_state)
-        X_res, y_res = rus.fit_resample(X, y)
-    else:
-        X_res, y_res = X, y
-    
-    X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=test_size, random_state=random_state)
+        X_train, y_train = rus.fit_resample(X_train, y_train)
     
     return X_train, X_test, y_train, y_test
 
@@ -76,7 +74,7 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
     return pipeline
 
 
-def build_preprocessor_pipeline(X_train, X_test, include_columns=None, regex_columns=None):
+def build_preprocessor_pipeline(X_train, include_columns=None, regex_columns=None):
     if include_columns is None:
         include_columns = X_train.columns.tolist()
     
@@ -89,17 +87,13 @@ def build_preprocessor_pipeline(X_train, X_test, include_columns=None, regex_col
     cat_columns = column_selection_train.select_dtypes(include=['object'])
     num_columns = column_selection_train.select_dtypes(exclude=['object'])
     
-    column_selection_test = X_test[include_columns]
-    if regex_columns:
-        column_selection_test = pd.concat([column_selection_test, X_test[additional_columns]], axis=1)
-
     preprocessor = ColumnTransformer(
         transformers=[
             ('num', StandardScaler(), num_columns.columns),
             ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns.columns)
         ])
     
-    return preprocessor, column_selection_train, column_selection_test
+    return preprocessor, column_selection_train
 
 
 def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
@@ -111,8 +105,6 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
     if param_grid is not None:
         grid_search = GridSearchCV(pipeline, param_grid, cv=skf, n_jobs=-1)
         grid_search.fit(X, y)
-
-        best_estimator = grid_search.best_estimator_
         best_params = grid_search.best_params_
     
     metrics_list = []
@@ -125,7 +117,10 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
+        if param_grid is not None:
+            best_estimator = grid_search.best_estimator_
         best_estimator.fit(X_train, y_train)
+        
         y_pred = best_estimator.predict(X_test)
         y_prob = best_estimator.predict_proba(X_test)[:, 1]
         
