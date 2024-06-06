@@ -6817,7 +6817,7 @@ Name: proportion, dtype: float64</code></pre>
 <h1>Further Model Candidates</h1>
 <section id="decision-tree" class="level2">
 <h2 class="anchored" data-anchor-id="decision-tree">Decision Tree</h2>
-<div id="cell-111" class="cell" data-execution_count="87">
+<div id="cell-111" class="cell" data-execution_count="92">
 <div class="sourceCode cell-code" id="cb76"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeClassifier</span>
 <span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>all_vars_prep_pipeline, all_vars_column_selection  <span class="op">=</span> build_preprocessor_pipeline(X_train, include_columns<span class="op">=</span>X_train.columns.tolist())</span>
@@ -6832,35 +6832,64 @@ Name: proportion, dtype: float64</code></pre>
 <span id="cb76-12"><a href="#cb76-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier__min_samples_split'</span>: [<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>],</span>
 <span id="cb76-13"><a href="#cb76-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier__min_samples_leaf'</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>],</span>
 <span id="cb76-14"><a href="#cb76-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier__criterion'</span>: [<span class="st">'gini'</span>, <span class="st">'entropy'</span>]</span>
-<span id="cb76-15"><a href="#cb76-15" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb76-15"><a href="#cb76-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb76-16"><a href="#cb76-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-17"><a href="#cb76-17" aria-hidden="true" tabindex="-1"></a>best_estimator, best_params, metrics_df, roc_curves, pr_curves, lift_probs, true_labels <span class="op">=</span> cross_validate(</span>
+<span id="cb76-18"><a href="#cb76-18" aria-hidden="true" tabindex="-1"></a>    pipeline<span class="op">=</span>dt_pipeline, </span>
+<span id="cb76-19"><a href="#cb76-19" aria-hidden="true" tabindex="-1"></a>    X<span class="op">=</span>all_vars_column_selection, </span>
+<span id="cb76-20"><a href="#cb76-20" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>y_train,</span>
+<span id="cb76-21"><a href="#cb76-21" aria-hidden="true" tabindex="-1"></a>    param_grid<span class="op">=</span>param_grid,</span>
+<span id="cb76-22"><a href="#cb76-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb76-23"><a href="#cb76-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-24"><a href="#cb76-24" aria-hidden="true" tabindex="-1"></a>model_name <span class="op">=</span> best_estimator.named_steps[<span class="st">'classifier'</span>].__class__.<span class="va">__name__</span></span>
+<span id="cb76-25"><a href="#cb76-25" aria-hidden="true" tabindex="-1"></a>plot_metrics(metrics_df, model_name)</span>
+<span id="cb76-26"><a href="#cb76-26" aria-hidden="true" tabindex="-1"></a>plot_confusion_matrix(best_estimator, X_test[all_vars_column_selection.columns], y_test, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/cell-62-output-1.png" class="img-fluid figure-img"></p>
+</figure>
 </div>
-<div id="cell-112" class="cell" data-execution_count="88">
-<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeClassifier</span>
-<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a>all_vars_prep_pipeline, all_vars_column_selection  <span class="op">=</span> build_preprocessor_pipeline(X_train, include_columns<span class="op">=</span>X_train.columns.tolist())</span>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/cell-62-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="cell-112" class="cell" data-execution_count="94">
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the learning curve</span></span>
+<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> learning_curve</span>
+<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb77-5"><a href="#cb77-5" aria-hidden="true" tabindex="-1"></a>dt_pipeline <span class="op">=</span> Pipeline([</span>
-<span id="cb77-6"><a href="#cb77-6" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'preprocessor'</span>, all_vars_prep_pipeline),</span>
-<span id="cb77-7"><a href="#cb77-7" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'classifier'</span>, DecisionTreeClassifier(max_depth<span class="op">=</span><span class="dv">4</span>, max_features<span class="op">=</span><span class="dv">300</span>))</span>
-<span id="cb77-8"><a href="#cb77-8" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb77-9"><a href="#cb77-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb77-10"><a href="#cb77-10" aria-hidden="true" tabindex="-1"></a>param_grid <span class="op">=</span> {</span>
-<span id="cb77-11"><a href="#cb77-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier__max_depth'</span>: [<span class="dv">1000</span>],</span>
-<span id="cb77-12"><a href="#cb77-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier__min_samples_split'</span>: [<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>],</span>
-<span id="cb77-13"><a href="#cb77-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier__min_samples_leaf'</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>],</span>
-<span id="cb77-14"><a href="#cb77-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier__criterion'</span>: [<span class="st">'gini'</span>, <span class="st">'entropy'</span>]</span>
-<span id="cb77-15"><a href="#cb77-15" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb77-16"><a href="#cb77-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb77-17"><a href="#cb77-17" aria-hidden="true" tabindex="-1"></a>best_estimator, best_params, metrics_df, roc_curves, pr_curves, lift_probs, true_labels <span class="op">=</span> cross_validate(</span>
-<span id="cb77-18"><a href="#cb77-18" aria-hidden="true" tabindex="-1"></a>    pipeline<span class="op">=</span>dt_pipeline, </span>
-<span id="cb77-19"><a href="#cb77-19" aria-hidden="true" tabindex="-1"></a>    X<span class="op">=</span>all_vars_column_selection, </span>
-<span id="cb77-20"><a href="#cb77-20" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>y_train,</span>
-<span id="cb77-21"><a href="#cb77-21" aria-hidden="true" tabindex="-1"></a>    param_grid<span class="op">=</span>param_grid,</span>
-<span id="cb77-22"><a href="#cb77-22" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb77-23"><a href="#cb77-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb77-24"><a href="#cb77-24" aria-hidden="true" tabindex="-1"></a>model_name <span class="op">=</span> best_estimator.named_steps[<span class="st">'classifier'</span>].__class__.<span class="va">__name__</span></span>
-<span id="cb77-25"><a href="#cb77-25" aria-hidden="true" tabindex="-1"></a>plot_metrics(metrics_df, model_name)</span>
-<span id="cb77-26"><a href="#cb77-26" aria-hidden="true" tabindex="-1"></a>plot_confusion_matrix(best_estimator, X_test[all_vars_column_selection.columns], y_test, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb77-5"><a href="#cb77-5" aria-hidden="true" tabindex="-1"></a>train_sizes, train_scores, test_scores <span class="op">=</span> learning_curve(</span>
+<span id="cb77-6"><a href="#cb77-6" aria-hidden="true" tabindex="-1"></a>    estimator<span class="op">=</span>best_estimator,</span>
+<span id="cb77-7"><a href="#cb77-7" aria-hidden="true" tabindex="-1"></a>    X<span class="op">=</span>X_train[all_vars_column_selection.columns],</span>
+<span id="cb77-8"><a href="#cb77-8" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>y_train,</span>
+<span id="cb77-9"><a href="#cb77-9" aria-hidden="true" tabindex="-1"></a>    train_sizes<span class="op">=</span>np.linspace(<span class="fl">0.1</span>, <span class="fl">1.0</span>, <span class="dv">10</span>),</span>
+<span id="cb77-10"><a href="#cb77-10" aria-hidden="true" tabindex="-1"></a>    cv<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb77-11"><a href="#cb77-11" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb77-12"><a href="#cb77-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb77-13"><a href="#cb77-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb77-14"><a href="#cb77-14" aria-hidden="true" tabindex="-1"></a>train_mean <span class="op">=</span> np.mean(train_scores, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb77-15"><a href="#cb77-15" aria-hidden="true" tabindex="-1"></a>train_std <span class="op">=</span> np.std(train_scores, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb77-16"><a href="#cb77-16" aria-hidden="true" tabindex="-1"></a>test_mean <span class="op">=</span> np.mean(test_scores, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb77-17"><a href="#cb77-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb77-18"><a href="#cb77-18" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">6</span>))</span>
+<span id="cb77-19"><a href="#cb77-19" aria-hidden="true" tabindex="-1"></a>plt.plot(train_sizes, train_mean, color<span class="op">=</span><span class="st">'blue'</span>, marker<span class="op">=</span><span class="st">'o'</span>, markersize<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">'Training Accuracy'</span>)</span>
+<span id="cb77-20"><a href="#cb77-20" aria-hidden="true" tabindex="-1"></a>plt.fill_between(train_sizes, train_mean <span class="op">+</span> train_std, train_mean <span class="op">-</span> train_std, alpha<span class="op">=</span><span class="fl">0.15</span>, color<span class="op">=</span><span class="st">'blue'</span>)</span>
+<span id="cb77-21"><a href="#cb77-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb77-22"><a href="#cb77-22" aria-hidden="true" tabindex="-1"></a>plt.plot(train_sizes, test_mean, color<span class="op">=</span><span class="st">'green'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, marker<span class="op">=</span><span class="st">'s'</span>, markersize<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">'Validation Accuracy'</span>)</span>
+<span id="cb77-23"><a href="#cb77-23" aria-hidden="true" tabindex="-1"></a>plt.fill_between(train_sizes, test_mean <span class="op">+</span> train_std, test_mean <span class="op">-</span> train_std, alpha<span class="op">=</span><span class="fl">0.15</span>, color<span class="op">=</span><span class="st">'green'</span>)</span>
+<span id="cb77-24"><a href="#cb77-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb77-25"><a href="#cb77-25" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Learning Curve'</span>)</span>
+<span id="cb77-26"><a href="#cb77-26" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Number of Training Samples'</span>)</span>
+<span id="cb77-27"><a href="#cb77-27" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'Accuracy'</span>)</span>
+<span id="cb77-28"><a href="#cb77-28" aria-hidden="true" tabindex="-1"></a>plt.legend()</span>
+<span id="cb77-29"><a href="#cb77-29" aria-hidden="true" tabindex="-1"></a>plt.grid(<span class="va">True</span>)</span>
+<span id="cb77-30"><a href="#cb77-30" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -6868,15 +6897,8 @@ Name: proportion, dtype: float64</code></pre>
 </figure>
 </div>
 </div>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="notebook_files/figure-html/cell-63-output-2.png" class="img-fluid figure-img"></p>
-</figure>
 </div>
-</div>
-</div>
-<div id="cell-113" class="cell" data-execution_count="83">
+<div id="cell-113" class="cell" data-execution_count="93">
 <div class="sourceCode cell-code" id="cb78"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot dalex feature importance</span></span>
 <span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dalex <span class="im">import</span> Explainer</span>
 <span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -6889,22 +6911,22 @@ Name: proportion, dtype: float64</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>Preparation of a new explainer is initiated
 
-  -&gt; data              : 1188 rows 235 cols
+  -&gt; data              : 1188 rows 234 cols
   -&gt; target variable   : Parameter 'y' was a pandas.Series. Converted to a numpy.ndarray.
   -&gt; target variable   : 1188 values
   -&gt; model_class       : sklearn.tree._classes.DecisionTreeClassifier (default)
   -&gt; label             : DecisionTreeClassifier
   -&gt; predict function  : &lt;function yhat_proba_default at 0x28f8c9440&gt; will be used (default)
   -&gt; predict function  : Accepts only pandas.DataFrame, numpy.ndarray causes problems.
-  -&gt; predicted values  : min = 0.0, mean = 0.5, max = 1.0
+  -&gt; predicted values  : min = 0.0, mean = 0.496, max = 1.0
   -&gt; model type        : classification will be used (default)
   -&gt; residual function : difference between y and yhat (default)
-  -&gt; residuals         : min = 0.0, mean = 0.0, max = 0.0
+  -&gt; residuals         : min = -1.0, mean = 0.00379, max = 1.0
   -&gt; model_info        : package sklearn
 
 A new explainer has been created!</code></pre>
 </div>
-<div class="cell-output cell-output-display" data-execution_count="83">
+<div class="cell-output cell-output-display" data-execution_count="93">
 <div>
 
 
@@ -6921,31 +6943,31 @@ A new explainer has been created!</code></pre>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">0</td>
 <td>n_transactions_last_quarter_sum</td>
-<td>0.000000</td>
+<td>0.052350</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">1</td>
-<td>pre_card_credit_mean</td>
-<td>0.000000</td>
+<td>ordertype_INSURANCE PAYMENT</td>
+<td>0.052350</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">2</td>
-<td>pre_card_credit_median</td>
-<td>0.000000</td>
+<td>ordertype_MISSING</td>
+<td>0.052350</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">3</td>
-<td>pre_card_credit_min</td>
-<td>0.000000</td>
+<td>pre_card_balance_max</td>
+<td>0.052350</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">4</td>
-<td>pre_card_credit_std</td>
-<td>0.000000</td>
+<td>pre_card_balance_mean</td>
+<td>0.052350</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="even">
@@ -6955,39 +6977,39 @@ A new explainer has been created!</code></pre>
 <td>...</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">232</td>
-<td>credit_month_diff_10</td>
-<td>0.000000</td>
+<td data-quarto-table-cell-role="th">231</td>
+<td>volume_month_min</td>
+<td>0.115412</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">233</td>
-<td>credit_month_diff_11</td>
-<td>0.000000</td>
+<td data-quarto-table-cell-role="th">232</td>
+<td>pre_card_volume_sum</td>
+<td>0.141961</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">234</td>
-<td>credit_first_quarter_median</td>
-<td>0.000000</td>
+<td data-quarto-table-cell-role="th">233</td>
+<td>credit_first_quarter_min</td>
+<td>0.154898</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 <tr class="even">
+<td data-quarto-table-cell-role="th">234</td>
+<td>volume_month_diff_1</td>
+<td>0.279762</td>
+<td>DecisionTreeClassifier</td>
+</tr>
+<tr class="odd">
 <td data-quarto-table-cell-role="th">235</td>
 <td>_baseline_</td>
-<td>0.499836</td>
-<td>DecisionTreeClassifier</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">236</td>
-<td>card_type</td>
-<td>0.504836</td>
+<td>0.500747</td>
 <td>DecisionTreeClassifier</td>
 </tr>
 </tbody>
 </table>
 
-<p>237 rows × 3 columns</p>
+<p>236 rows × 3 columns</p>
 </div>
 </div>
 </div>
