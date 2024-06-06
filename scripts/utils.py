@@ -4,10 +4,12 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.utils import resample
+from sklearn.model_selection import learning_curve
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scikitplot as skplt
 from matplotlib.ticker import FuncFormatter
+from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import cross_val_predict, StratifiedKFold, GridSearchCV
@@ -113,7 +115,7 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
     lift_probs = []
     true_labels = []
 
-    for train_index, test_index in skf.split(X, y):
+    for train_index, test_index in tqdm(skf.split(X, y), total=skf.get_n_splits(), desc="Cross-Validation"):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
@@ -259,4 +261,33 @@ def plot_agg_variables(client_df, metric_prefix, aggfuncs=['mean']):
         fig.delaxes(axes[i])
     
     plt.tight_layout()
+    plt.show()
+
+
+def plot_learning_curve(estimator, X, y, n_folds=5, train_sizes=np.linspace(0.1, 1.0, 10), n_jobs=-1):
+    train_sizes, train_scores, test_scores = learning_curve(
+        estimator=estimator,
+        X=X,
+        y=y,
+        train_sizes=train_sizes,
+        cv=n_folds,
+        n_jobs=n_jobs
+    )
+
+    train_mean = np.mean(train_scores, axis=1)
+    train_std = np.std(train_scores, axis=1)
+    test_mean = np.mean(test_scores, axis=1)
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(train_sizes, train_mean, color='blue', marker='o', markersize=5, label='Training Accuracy')
+    plt.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15, color='blue')
+
+    plt.plot(train_sizes, test_mean, color='green', linestyle='--', marker='s', markersize=5, label='Validation Accuracy')
+    plt.fill_between(train_sizes, test_mean + train_std, test_mean - train_std, alpha=0.15, color='green')
+
+    plt.title('Learning Curve')
+    plt.xlabel('Number of Training Samples')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.grid(True)
     plt.show()
