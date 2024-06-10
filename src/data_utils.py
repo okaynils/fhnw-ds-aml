@@ -2,6 +2,16 @@ import pandas as pd
 import os
 import json
 
+def add_prefix_except_id(df, prefix, id_exceptions=[]):
+    new_df = df.copy()
+    
+    new_df.columns = [
+        f'{prefix}{col}' if (('_id' not in col and 'id_' not in col) or col in id_exceptions) else col 
+        for col in df.columns
+    ]
+    
+    return new_df
+
 class DataLoader:
     def __init__(self, base_path='data', translations_name=None):
         self.base_path = base_path
