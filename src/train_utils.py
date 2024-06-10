@@ -3,14 +3,17 @@ import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
+from sklearn.feature_selection import RFE
 
+
+np.random.seed(1337)
 
 def train_test_split_bal(df, target_column, test_size=0.2, random_state=1337, balancing_technique=None):
     X = df.drop(columns=[target_column])
@@ -69,8 +72,23 @@ def build_preprocessor_pipeline(X_train, include_columns=None, regex_columns=Non
     return preprocessor, column_selection_train
 
 
-def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
-    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=1337)
+class SelectFromModelTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, estimator, n_features_to_select=None):
+        self.estimator = estimator
+        self.n_features_to_select = n_features_to_select
+        self.rfe = None
+
+    def fit(self, X, y=None):
+        self.rfe = RFE(estimator=self.estimator, n_features_to_select=self.n_features_to_select)
+        self.rfe.fit(X, y)
+        return self
+
+    def transform(self, X):
+        return self.rfe.transform(X)
+
+
+def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, n_features_to_select=None, random_state=1337):
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=False)
     
     best_estimator = pipeline
     best_params = None
@@ -92,6 +110,19 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None):
         
         if param_grid is not None:
             best_estimator = grid_search.best_estimator_
+
+        if n_features_to_select is not None:
+            rfe_step = SelectFromModelTransformer(estimator=best_estimator.named_steps['classifier'], n_features_to_select=n_features_to_select)
+            pipeline_with_rfe = Pipeline([
+                ('preprocessor', best_estimator.named_steps['preprocessor']),
+                ('feature_selection', rfe_step),
+                ('classifier', best_estimator.named_steps['classifier'])
+            ])
+            best_estimator = pipeline_with_rfe
+
+        if hasattr(best_estimator.named_steps['classifier'], 'random_state'):
+            best_estimator.named_steps['classifier'].random_state = random_state
+
         best_estimator.fit(X_train, y_train)
         
         y_pred = best_estimator.predict(X_test)

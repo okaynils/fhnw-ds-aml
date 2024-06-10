@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scikitplot as skplt
 from matplotlib.ticker import FuncFormatter
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
-                             f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
+                             f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix, auc)
 
 def plot_metrics(metrics_df, model_name):
     metrics_mean = metrics_df.mean()
@@ -47,6 +46,63 @@ def plot_roc_curve(roc_curves, metrics_mean, model_name):
     plt.ylabel('True Positive Rate')
     plt.suptitle('Receiver Operating Characteristic')
     plt.legend(loc='lower right')
+    plt.show()
+    
+
+def plot_auc_boxplots(roc_curves_list, model_name_list):
+    auc_values = []
+    
+    for roc_curves in roc_curves_list:
+        model_auc_values = [auc(fpr, tpr) for fpr, tpr in roc_curves]
+        auc_values.append(model_auc_values)
+    
+    medianprops = dict(linestyle='-', linewidth=2, color='k')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.boxplot(auc_values, vert=True, patch_artist=True, tick_labels=model_name_list, medianprops=medianprops)
+    ax.set_xlabel('Model')
+    ax.set_ylabel('AUC Value')
+    ax.set_title('AUC Boxplots for Multiple Estimators')
+    plt.show()
+    
+
+def plot_multiple_roc_curves(roc_curves_list, model_name_list):
+    num_models = len(roc_curves_list)
+    num_cols = 2
+    num_rows = (num_models + 1) // num_cols
+    
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(12, num_rows * 6))
+    
+    for i, (roc_curves, model_name) in enumerate(zip(roc_curves_list, model_name_list)):
+        ax = axes[i // num_cols, i % num_cols]
+        all_tpr = []
+        for fpr, tpr in roc_curves:
+            ax.plot(fpr, tpr, alpha=0.3)
+            all_tpr.append(np.interp(np.linspace(0, 1, 100), fpr, tpr))
+        
+        mean_fpr = np.linspace(0, 1, 100)
+        mean_tpr = np.mean(all_tpr, axis=0)
+        std_tpr = np.std(all_tpr, axis=0)
+        tpr_upper = np.minimum(mean_tpr + std_tpr, 1)
+        tpr_lower = np.maximum(mean_tpr - std_tpr, 0)
+        
+        roc_auc = np.trapz(mean_tpr, mean_fpr)
+        mean_std = np.mean(std_tpr)
+        
+        ax.plot(mean_fpr, mean_tpr, label=f'{model_name} Mean ROC (area = {roc_auc:.4f})', color='b')
+        ax.fill_between(mean_fpr, tpr_lower, tpr_upper, color='blue', alpha=0.2, label=f'{model_name} ± 1 std. dev. (μσ = {mean_std:.4f})')
+        ax.plot([0, 1], [0, 1], 'k--')
+        ax.set_xlim([0.0, 1.0])
+        ax.set_ylim([0.0, 1.05])
+        ax.set_xlabel('False Positive Rate')
+        ax.set_ylabel('True Positive Rate')
+        ax.set_title(f'{model_name} ROC Curve')
+        ax.legend(loc='lower right')
+    
+    for j in range(i + 1, num_rows * num_cols):
+        fig.delaxes(axes[j // num_cols, j % num_cols])
+    
+    plt.tight_layout()
+    plt.suptitle('Receiver Operating Characteristic Curves for Multiple Estimators', y=1.02)
     plt.show()
 
 
