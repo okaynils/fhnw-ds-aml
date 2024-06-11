@@ -3,15 +3,15 @@ import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.feature_selection import RFECV
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix)
-from sklearn.feature_selection import RFE
-
 
 np.random.seed(1337)
 
@@ -65,29 +65,46 @@ def build_preprocessor_pipeline(X_train, include_columns=None, regex_columns=Non
     
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), num_columns.columns),
+            ('num', Pipeline(steps=[
+                ('imputer', SimpleImputer(strategy='mean')),
+                ('scaler', StandardScaler())
+            ]), num_columns.columns),
             ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns.columns)
         ])
     
     return preprocessor, column_selection_train
 
-
 class SelectFromModelTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, estimator, n_features_to_select=None):
+    def __init__(self, estimator, n_features_to_select=None, step=0.1, cv=None, scoring=None):
         self.estimator = estimator
         self.n_features_to_select = n_features_to_select
-        self.rfe = None
+        self.step = step
+        self.cv = cv
+        self.scoring = scoring
+        self.rfecv = None
 
     def fit(self, X, y=None):
-        self.rfe = RFE(estimator=self.estimator, n_features_to_select=self.n_features_to_select)
-        self.rfe.fit(X, y)
+        self.rfecv = RFECV(
+            estimator=self.estimator, 
+            step=self.step, 
+            cv=self.cv, 
+            scoring=self.scoring, 
+            n_jobs=-1
+        )
+        self.rfecv.fit(X, y)
         return self
 
     def transform(self, X):
-        return self.rfe.transform(X)
+        return self.rfecv.transform(X)
+    
+    def get_support(self):
+        return self.rfecv.support_
+    
+    def get_ranking(self):
+        return self.rfecv.ranking_
 
 
-def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, n_features_to_select=None, random_state=1337):
+def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=1337):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=False)
     
     best_estimator = pipeline
@@ -110,15 +127,6 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, n_features_to_se
         
         if param_grid is not None:
             best_estimator = grid_search.best_estimator_
-
-        if n_features_to_select is not None:
-            rfe_step = SelectFromModelTransformer(estimator=best_estimator.named_steps['classifier'], n_features_to_select=n_features_to_select)
-            pipeline_with_rfe = Pipeline([
-                ('preprocessor', best_estimator.named_steps['preprocessor']),
-                ('feature_selection', rfe_step),
-                ('classifier', best_estimator.named_steps['classifier'])
-            ])
-            best_estimator = pipeline_with_rfe
 
         if hasattr(best_estimator.named_steps['classifier'], 'random_state'):
             best_estimator.named_steps['classifier'].random_state = random_state

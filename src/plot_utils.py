@@ -8,6 +8,56 @@ from matplotlib.ticker import FuncFormatter
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix, auc)
 
+def get_top_p_percent_predictions(estimator, X, p=0.1):
+    probabilities = estimator.predict_proba(X)[:, 1]
+    sorted_indices = probabilities.argsort()
+    top_indices = sorted_indices[-int(p * len(X)):]
+    return X.iloc[top_indices]
+
+def plot_model_concordance(estimators, estimator_names, X, p=0.1):
+    overlap_matrix = np.zeros((len(estimators), len(estimators)))
+
+    for i, estimator1 in enumerate(estimators):
+        for j, estimator2 in enumerate(estimators):
+            if i >= j:
+                top_p_percent1 = get_top_p_percent_predictions(estimator1, X, p)
+                top_p_percent2 = get_top_p_percent_predictions(estimator2, X, p)
+                
+                overlap = top_p_percent1.index.intersection(top_p_percent2.index)
+                overlap_matrix[i, j] = len(overlap) / len(top_p_percent1)
+    
+    fig, ax = plt.subplots()
+
+    cmap = plt.get_cmap('coolwarm')
+    cmap.set_under('white', alpha=0)
+    
+    masked_array = np.ma.masked_where(overlap_matrix == 0, overlap_matrix)
+
+    cax = ax.matshow(masked_array, cmap=cmap, vmin=0.01, zorder=2)
+
+    fig.colorbar(cax)
+
+    ax.set_xticks(np.arange(len(estimator_names)))
+    ax.set_yticks(np.arange(len(estimator_names)))
+    ax.set_xticklabels(estimator_names)
+    ax.set_yticklabels(estimator_names)
+
+    plt.title(f'Overlap Matrix for Top {p*100}% Customers')
+    
+    ax.set_xticklabels(estimator_names, rotation=90)
+    ax.set_xticks(np.arange(len(estimator_names)+1)-0.5, minor=True)
+    ax.xaxis.set_label_position('bottom')
+    ax.xaxis.tick_bottom()
+    ax.set_yticks(np.arange(len(estimator_names)+1)-0.5, minor=True)
+    ax.grid(True, zorder=1, color='black')
+
+    for i in range(len(estimator_names)):
+        for j in range(len(estimator_names)):
+            if i >= j:
+                text = ax.text(j, i, f'{overlap_matrix[i, j]:.2f}', ha='center', va='center', color='black')
+
+    plt.show()
+
 def plot_metrics(metrics_df, model_name):
     metrics_mean = metrics_df.mean()
     metrics_std = metrics_df.std()
