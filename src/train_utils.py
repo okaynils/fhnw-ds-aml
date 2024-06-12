@@ -120,7 +120,7 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=133
         best_estimator = Pipeline(steps=new_pipeline_steps)
     
     if param_grid is not None:
-        grid_search = GridSearchCV(pipeline, param_grid, cv=skf, n_jobs=-1)
+        grid_search = GridSearchCV(pipeline, param_grid, cv=skf, n_jobs=-1, scoring='roc_auc')
         grid_search.fit(X, y)
         best_params = grid_search.best_params_
     else:
@@ -144,4 +144,4 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=133
 
     best_estimator.fit(X, y)
 
-    return best_estimator, best_params, metrics_df, roc_curves, pr_curves, lift_probs, true_labels
+    return best_estimator, best_params, metrics_df, roc_curves, pr_curves, lift_probs, true_labels, grid_search
