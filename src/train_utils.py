@@ -5,7 +5,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.feature_selection import RFECV
+from sklearn.feature_selection import SelectKBest
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
@@ -50,58 +50,57 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
     return pipeline
 
 
-def build_preprocessor_pipeline(X_train, include_columns=None, regex_columns=None):
-    if include_columns is None:
-        include_columns = X_train.columns.tolist()
-    
-    column_selection_train = X_train[include_columns]
-    
-    if regex_columns:
-        additional_columns = X_train.filter(regex=regex_columns, axis=1).columns
-        column_selection_train = pd.concat([column_selection_train, X_train[additional_columns]], axis=1)
-    
-    cat_columns = column_selection_train.select_dtypes(include=['object'])
-    num_columns = column_selection_train.select_dtypes(exclude=['object'])
-    
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', Pipeline(steps=[
-                ('imputer', SimpleImputer(strategy='mean')),
-                ('scaler', StandardScaler())
-            ]), num_columns.columns),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns.columns)
-        ])
-    
-    return preprocessor, column_selection_train
-
-class SelectFromModelTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, estimator, n_features_to_select=None, step=0.1, cv=None, scoring=None):
-        self.estimator = estimator
-        self.n_features_to_select = n_features_to_select
-        self.step = step
-        self.cv = cv
-        self.scoring = scoring
-        self.rfecv = None
+class ColumnSelector(TransformerMixin, BaseEstimator):
+    def __init__(self, include_columns=None, regex_columns=None):
+        self.include_columns = include_columns
+        self.regex_columns = regex_columns
+        self.selected_columns = None
 
     def fit(self, X, y=None):
-        self.rfecv = RFECV(
-            estimator=self.estimator, 
-            step=self.step, 
-            cv=self.cv, 
-            scoring=self.scoring, 
-            n_jobs=-1
-        )
-        self.rfecv.fit(X, y)
+        if self.include_columns is None:
+            self.include_columns = X.columns.tolist()
+        
+        column_selection = X[self.include_columns]
+        
+        if self.regex_columns:
+            additional_columns = X.filter(regex=self.regex_columns, axis=1).columns
+            column_selection = pd.concat([column_selection, X[additional_columns]], axis=1)
+        
+        self.selected_columns = column_selection.columns.tolist()
         return self
 
     def transform(self, X):
-        return self.rfecv.transform(X)
+        return X[self.selected_columns]
+
+    def get_feature_names(self):
+        return self.selected_columns
+
+
+def build_preprocessor_pipeline(X_train, include_columns=None, regex_columns=None, score_func='auc_roc', k=None):
+    column_selector = ColumnSelector(include_columns, regex_columns)
+    column_selection_train = column_selector.fit_transform(X_train)
     
-    def get_support(self):
-        return self.rfecv.support_
+    cat_columns = column_selection_train.select_dtypes(include=['object']).columns
+    num_columns = column_selection_train.select_dtypes(exclude=['object']).columns
     
-    def get_ranking(self):
-        return self.rfecv.ranking_
+    transformers = [
+        ('num', Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='mean')),
+            ('scaler', StandardScaler())
+        ]), num_columns),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns)
+    ]
+
+    preprocessor = ColumnTransformer(transformers)
+    
+    steps = [('column_selector', column_selector), ('preprocessor', preprocessor)]
+    
+    if score_func is not None and k is not None:
+        steps.append(('select_k_best', SelectKBest(score_func=score_func, k=k)))
+    
+    pipeline = Pipeline(steps=steps)
+    
+    return pipeline, column_selection_train
 
 
 def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=1337):
