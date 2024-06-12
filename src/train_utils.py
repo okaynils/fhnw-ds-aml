@@ -5,7 +5,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import RFE
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
@@ -50,64 +50,44 @@ def create_pipeline(categorical_features, numerical_features, estimator: BaseEst
     return pipeline
 
 
-class ColumnSelector(TransformerMixin, BaseEstimator):
-    def __init__(self, include_columns=None, regex_columns=None):
-        self.include_columns = include_columns
-        self.regex_columns = regex_columns
-        self.selected_columns = None
-
-    def fit(self, X, y=None):
-        if self.include_columns is None:
-            self.include_columns = X.columns.tolist()
-        
-        column_selection = X[self.include_columns]
-        
-        if self.regex_columns:
-            additional_columns = X.filter(regex=self.regex_columns, axis=1).columns
-            column_selection = pd.concat([column_selection, X[additional_columns]], axis=1)
-        
-        self.selected_columns = column_selection.columns.tolist()
-        return self
-
-    def transform(self, X):
-        return X[self.selected_columns]
-
-    def get_feature_names(self):
-        return self.selected_columns
-
-
-def build_preprocessor_pipeline(X_train, include_columns=None, regex_columns=None, score_func='auc_roc', k=None):
-    column_selector = ColumnSelector(include_columns, regex_columns)
-    column_selection_train = column_selector.fit_transform(X_train)
+def build_preprocessor_pipeline(X_train, include_columns=None, regex_columns=None):
+    if include_columns is None:
+        include_columns = X_train.columns.tolist()
     
-    cat_columns = column_selection_train.select_dtypes(include=['object']).columns
-    num_columns = column_selection_train.select_dtypes(exclude=['object']).columns
+    column_selection_train = X_train[include_columns]
     
-    transformers = [
-        ('num', Pipeline(steps=[
-            ('imputer', SimpleImputer(strategy='mean')),
-            ('scaler', StandardScaler())
-        ]), num_columns),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns)
-    ]
-
-    preprocessor = ColumnTransformer(transformers)
+    if regex_columns:
+        additional_columns = X_train.filter(regex=regex_columns, axis=1).columns
+        column_selection_train = pd.concat([column_selection_train, X_train[additional_columns]], axis=1)
     
-    steps = [('column_selector', column_selector), ('preprocessor', preprocessor)]
+    cat_columns = column_selection_train.select_dtypes(include=['object'])
+    num_columns = column_selection_train.select_dtypes(exclude=['object'])
     
-    if score_func is not None and k is not None:
-        steps.append(('select_k_best', SelectKBest(score_func=score_func, k=k)))
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', Pipeline(steps=[
+                ('imputer', SimpleImputer(strategy='mean')),
+                ('scaler', StandardScaler())
+            ]), num_columns.columns),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), cat_columns.columns)
+        ])
     
-    pipeline = Pipeline(steps=steps)
-    
-    return pipeline, column_selection_train
+    return preprocessor, column_selection_train
 
 
-def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=1337):
+def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=1337, n_features_to_select=None):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=False)
     
     best_estimator = pipeline
     best_params = None
+    
+    if n_features_to_select is not None:
+        classifier = pipeline.named_steps['classifier']
+        rfe = RFE(estimator=classifier, n_features_to_select=n_features_to_select, step=10)
+        new_pipeline_steps = [(name, step) for name, step in pipeline.steps if name != 'classifier']
+        new_pipeline_steps.append(('rfe', rfe))
+        new_pipeline_steps.append(('classifier', classifier))
+        best_estimator = Pipeline(steps=new_pipeline_steps)
     
     if param_grid is not None:
         grid_search = GridSearchCV(pipeline, param_grid, cv=skf, n_jobs=-1)
