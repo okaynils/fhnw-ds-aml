@@ -133,7 +133,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#model-reduction" id="toc-model-reduction" class="nav-link" data-scroll-target="#model-reduction">Model Reduction</a>
   <ul class="collapse">
-  <li><a href="#recursive-feature-elimination" id="toc-recursive-feature-elimination" class="nav-link" data-scroll-target="#recursive-feature-elimination">Recursive Feature Elimination</a></li>
+  <li><a href="#selecting-features" id="toc-selecting-features" class="nav-link" data-scroll-target="#selecting-features">Selecting Features</a></li>
   </ul></li>
   <li><a href="#model-explanation" id="toc-model-explanation" class="nav-link" data-scroll-target="#model-explanation">Model Explanation</a></li>
   <li><a href="#top-customer-lists" id="toc-top-customer-lists" class="nav-link" data-scroll-target="#top-customer-lists">Top Customer Lists</a></li>
@@ -1278,7 +1278,7 @@ Number of clients remaining: 4355</code></pre>
 <span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate cumulative balance</span></span>
 <span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>transactions_monthly[<span class="st">'balance'</span>] <span class="op">=</span> transactions_monthly.groupby(<span class="st">'account_id'</span>)[<span class="st">'volume'</span>].cumsum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>/var/folders/th/yt_529gn5qj62429rgx8mqzc0000gn/T/ipykernel_45398/3639110262.py:15: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+<pre><code>/var/folders/th/yt_529gn5qj62429rgx8mqzc0000gn/T/ipykernel_59964/3639110262.py:15: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
   .apply(lambda x: reindex_df(x, x.name))</code></pre>
 </div>
 </div>
@@ -5715,36 +5715,36 @@ memory usage: 10.9 MB</code></pre>
 <th data-quarto-table-cell-role="th">pre_card_balance_max</th>
 <th data-quarto-table-cell-role="th">pre_card_balance_sum</th>
 <th data-quarto-table-cell-role="th">pre_card_balance_median</th>
-<th data-quarto-table-cell-role="th">volume_month_mean</th>
-<th data-quarto-table-cell-role="th">volume_month_std</th>
-<th data-quarto-table-cell-role="th">volume_month_min</th>
-<th data-quarto-table-cell-role="th">volume_month_max</th>
-<th data-quarto-table-cell-role="th">volume_month_sum</th>
-<th data-quarto-table-cell-role="th">volume_month_median</th>
-<th data-quarto-table-cell-role="th">n_transactions_month_mean</th>
-<th data-quarto-table-cell-role="th">n_transactions_month_std</th>
-<th data-quarto-table-cell-role="th">n_transactions_month_min</th>
-<th data-quarto-table-cell-role="th">n_transactions_month_max</th>
-<th data-quarto-table-cell-role="th">n_transactions_month_sum</th>
-<th data-quarto-table-cell-role="th">n_transactions_month_median</th>
-<th data-quarto-table-cell-role="th">credit_month_mean</th>
-<th data-quarto-table-cell-role="th">credit_month_std</th>
-<th data-quarto-table-cell-role="th">credit_month_min</th>
-<th data-quarto-table-cell-role="th">credit_month_max</th>
-<th data-quarto-table-cell-role="th">credit_month_sum</th>
-<th data-quarto-table-cell-role="th">credit_month_median</th>
-<th data-quarto-table-cell-role="th">balance_month_mean</th>
-<th data-quarto-table-cell-role="th">balance_month_std</th>
-<th data-quarto-table-cell-role="th">balance_month_min</th>
-<th data-quarto-table-cell-role="th">balance_month_max</th>
-<th data-quarto-table-cell-role="th">balance_month_sum</th>
-<th data-quarto-table-cell-role="th">balance_month_median</th>
 <th data-quarto-table-cell-role="th">withdrawal_month_mean</th>
 <th data-quarto-table-cell-role="th">withdrawal_month_std</th>
 <th data-quarto-table-cell-role="th">withdrawal_month_min</th>
 <th data-quarto-table-cell-role="th">withdrawal_month_max</th>
 <th data-quarto-table-cell-role="th">withdrawal_month_sum</th>
 <th data-quarto-table-cell-role="th">withdrawal_month_median</th>
+<th data-quarto-table-cell-role="th">balance_month_mean</th>
+<th data-quarto-table-cell-role="th">balance_month_std</th>
+<th data-quarto-table-cell-role="th">balance_month_min</th>
+<th data-quarto-table-cell-role="th">balance_month_max</th>
+<th data-quarto-table-cell-role="th">balance_month_sum</th>
+<th data-quarto-table-cell-role="th">balance_month_median</th>
+<th data-quarto-table-cell-role="th">volume_month_mean</th>
+<th data-quarto-table-cell-role="th">volume_month_std</th>
+<th data-quarto-table-cell-role="th">volume_month_min</th>
+<th data-quarto-table-cell-role="th">volume_month_max</th>
+<th data-quarto-table-cell-role="th">volume_month_sum</th>
+<th data-quarto-table-cell-role="th">volume_month_median</th>
+<th data-quarto-table-cell-role="th">credit_month_mean</th>
+<th data-quarto-table-cell-role="th">credit_month_std</th>
+<th data-quarto-table-cell-role="th">credit_month_min</th>
+<th data-quarto-table-cell-role="th">credit_month_max</th>
+<th data-quarto-table-cell-role="th">credit_month_sum</th>
+<th data-quarto-table-cell-role="th">credit_month_median</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_mean</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_std</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_min</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_max</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_sum</th>
+<th data-quarto-table-cell-role="th">n_transactions_month_median</th>
 </tr>
 </thead>
 <tbody>
@@ -5910,6 +5910,24 @@ memory usage: 10.9 MB</code></pre>
 <td>351559.5</td>
 <td>7825708.3</td>
 <td>186600.30</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>296714.615385</td>
+<td>28986.141531</td>
+<td>251970.8</td>
+<td>338855.2</td>
+<td>3857290.0</td>
+<td>298808.0</td>
+<td>7320.546154</td>
+<td>1375.278204</td>
+<td>6212.3</td>
+<td>10907.2</td>
+<td>95167.1</td>
+<td>6701.9</td>
 <td>7320.546154</td>
 <td>1375.278204</td>
 <td>6212.3</td>
@@ -5922,24 +5940,6 @@ memory usage: 10.9 MB</code></pre>
 <td>10.0</td>
 <td>69.0</td>
 <td>5.0</td>
-<td>7320.546154</td>
-<td>1375.278204</td>
-<td>6212.3</td>
-<td>10907.2</td>
-<td>95167.1</td>
-<td>6701.9</td>
-<td>296714.615385</td>
-<td>28986.141531</td>
-<td>251970.8</td>
-<td>338855.2</td>
-<td>3857290.0</td>
-<td>298808.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">1</td>
@@ -6103,6 +6103,24 @@ memory usage: 10.9 MB</code></pre>
 <td>364561.0</td>
 <td>1751396.3</td>
 <td>170838.90</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>106679.638462</td>
+<td>122063.799031</td>
+<td>0.0</td>
+<td>327805.3</td>
+<td>1386835.3</td>
+<td>56395.0</td>
+<td>25215.792308</td>
+<td>22089.010478</td>
+<td>0.0</td>
+<td>52913.9</td>
+<td>327805.3</td>
+<td>31345.5</td>
 <td>25215.792308</td>
 <td>22089.010478</td>
 <td>0.0</td>
@@ -6115,24 +6133,6 @@ memory usage: 10.9 MB</code></pre>
 <td>7.0</td>
 <td>39.0</td>
 <td>3.0</td>
-<td>25215.792308</td>
-<td>22089.010478</td>
-<td>0.0</td>
-<td>52913.9</td>
-<td>327805.3</td>
-<td>31345.5</td>
-<td>106679.638462</td>
-<td>122063.799031</td>
-<td>0.0</td>
-<td>327805.3</td>
-<td>1386835.3</td>
-<td>56395.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">2</td>
@@ -6296,6 +6296,24 @@ memory usage: 10.9 MB</code></pre>
 <td>205791.8</td>
 <td>1989553.4</td>
 <td>88898.10</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>126725.638462</td>
+<td>45719.838797</td>
+<td>57296.6</td>
+<td>195475.7</td>
+<td>1647433.3</td>
+<td>128920.1</td>
+<td>11577.584615</td>
+<td>3172.461770</td>
+<td>9003.4</td>
+<td>20249.4</td>
+<td>150508.6</td>
+<td>10917.6</td>
 <td>11577.584615</td>
 <td>3172.461770</td>
 <td>9003.4</td>
@@ -6308,24 +6326,6 @@ memory usage: 10.9 MB</code></pre>
 <td>12.0</td>
 <td>81.0</td>
 <td>6.0</td>
-<td>11577.584615</td>
-<td>3172.461770</td>
-<td>9003.4</td>
-<td>20249.4</td>
-<td>150508.6</td>
-<td>10917.6</td>
-<td>126725.638462</td>
-<td>45719.838797</td>
-<td>57296.6</td>
-<td>195475.7</td>
-<td>1647433.3</td>
-<td>128920.1</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">3</td>
@@ -6489,6 +6489,24 @@ memory usage: 10.9 MB</code></pre>
 <td>86477.9</td>
 <td>447591.8</td>
 <td>29609.35</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>27777.992308</td>
+<td>26763.060885</td>
+<td>0.0</td>
+<td>76465.3</td>
+<td>361113.9</td>
+<td>20668.0</td>
+<td>5881.946154</td>
+<td>4442.717706</td>
+<td>0.0</td>
+<td>15720.3</td>
+<td>76465.3</td>
+<td>5017.0</td>
 <td>5881.946154</td>
 <td>4442.717706</td>
 <td>0.0</td>
@@ -6501,24 +6519,6 @@ memory usage: 10.9 MB</code></pre>
 <td>10.0</td>
 <td>37.0</td>
 <td>1.0</td>
-<td>5881.946154</td>
-<td>4442.717706</td>
-<td>0.0</td>
-<td>15720.3</td>
-<td>76465.3</td>
-<td>5017.0</td>
-<td>27777.992308</td>
-<td>26763.060885</td>
-<td>0.0</td>
-<td>76465.3</td>
-<td>361113.9</td>
-<td>20668.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">4</td>
@@ -6682,6 +6682,24 @@ memory usage: 10.9 MB</code></pre>
 <td>636301.0</td>
 <td>15759785.6</td>
 <td>307532.30</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>545126.400000</td>
+<td>53800.670304</td>
+<td>462429.5</td>
+<td>625481.9</td>
+<td>7086643.2</td>
+<td>543606.8</td>
+<td>13373.561538</td>
+<td>4196.460352</td>
+<td>10792.4</td>
+<td>23857.9</td>
+<td>173856.3</td>
+<td>11865.2</td>
 <td>13373.561538</td>
 <td>4196.460352</td>
 <td>10792.4</td>
@@ -6694,24 +6712,6 @@ memory usage: 10.9 MB</code></pre>
 <td>11.0</td>
 <td>67.0</td>
 <td>5.0</td>
-<td>13373.561538</td>
-<td>4196.460352</td>
-<td>10792.4</td>
-<td>23857.9</td>
-<td>173856.3</td>
-<td>11865.2</td>
-<td>545126.400000</td>
-<td>53800.670304</td>
-<td>462429.5</td>
-<td>625481.9</td>
-<td>7086643.2</td>
-<td>543606.8</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
-<td>0.0</td>
 </tr>
 </tbody>
 </table>
@@ -6833,7 +6833,7 @@ Name: proportion, dtype: float64</code></pre>
 <span id="cb75-36"><a href="#cb75-36" aria-hidden="true" tabindex="-1"></a>plot_metrics(base_metrics_df, model_name)</span>
 <span id="cb75-37"><a href="#cb75-37" aria-hidden="true" tabindex="-1"></a>plot_confusion_matrix(base_estimator, X_test[baseline_column_selection.columns], y_test, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:00&lt;00:00, 15.39it/s]</code></pre>
+<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:00&lt;00:00,  8.60it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -6944,7 +6944,7 @@ Name: proportion, dtype: float64</code></pre>
 <span id="cb78-22"><a href="#cb78-22" aria-hidden="true" tabindex="-1"></a>plot_metrics(lr_metrics_df, model_name)</span>
 <span id="cb78-23"><a href="#cb78-23" aria-hidden="true" tabindex="-1"></a>plot_confusion_matrix(lr_estimator, X_test[all_vars_column_selection.columns], y_test, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:08&lt;00:00,  1.73s/it]</code></pre>
+<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:09&lt;00:00,  1.86s/it]</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -6993,7 +6993,7 @@ Name: proportion, dtype: float64</code></pre>
 <span id="cb80-26"><a href="#cb80-26" aria-hidden="true" tabindex="-1"></a>plot_metrics(dt_metrics_df, model_name)</span>
 <span id="cb80-27"><a href="#cb80-27" aria-hidden="true" tabindex="-1"></a>plot_confusion_matrix(dt_estimator, X_test[all_vars_column_selection.columns], y_test, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:00&lt;00:00,  9.06it/s]</code></pre>
+<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:01&lt;00:00,  4.50it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -7045,7 +7045,7 @@ Name: proportion, dtype: float64</code></pre>
 <span id="cb82-28"><a href="#cb82-28" aria-hidden="true" tabindex="-1"></a>plot_metrics(rf_metrics_df, model_name)</span>
 <span id="cb82-29"><a href="#cb82-29" aria-hidden="true" tabindex="-1"></a>plot_confusion_matrix(rf_estimator, X_test[all_vars_column_selection.columns], y_test, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:00&lt;00:00, 11.67it/s]</code></pre>
+<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:00&lt;00:00,  8.80it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -7093,7 +7093,7 @@ Name: proportion, dtype: float64</code></pre>
 <span id="cb84-25"><a href="#cb84-25" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb84-26"><a href="#cb84-26" aria-hidden="true" tabindex="-1"></a>plot_metrics(bg_metrics_df, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:00&lt;00:00,  5.02it/s]</code></pre>
+<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:01&lt;00:00,  4.50it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -7135,7 +7135,7 @@ Name: proportion, dtype: float64</code></pre>
 <span id="cb86-26"><a href="#cb86-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb86-27"><a href="#cb86-27" aria-hidden="true" tabindex="-1"></a>plot_metrics(bt_metrics_df, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:05&lt;00:00,  1.15s/it]</code></pre>
+<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:06&lt;00:00,  1.38s/it]</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -7268,38 +7268,38 @@ Name: proportion, dtype: float64</code></pre>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">2</td>
 <td>Decision Tree</td>
-<td>0.728958</td>
-<td>0.738834</td>
-<td>0.728958</td>
-<td>0.726753</td>
-<td>0.774677</td>
+<td>0.725604</td>
+<td>0.736488</td>
+<td>0.725604</td>
+<td>0.723136</td>
+<td>0.777470</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">3</td>
 <td>Random Forest</td>
-<td>0.763447</td>
-<td>0.768319</td>
-<td>0.763447</td>
-<td>0.762408</td>
-<td>0.836329</td>
+<td>0.764287</td>
+<td>0.771945</td>
+<td>0.764287</td>
+<td>0.762618</td>
+<td>0.833587</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">4</td>
 <td>Bagging Classifier</td>
-<td>0.757579</td>
-<td>0.760477</td>
-<td>0.757579</td>
-<td>0.756900</td>
-<td>0.831743</td>
+<td>0.756724</td>
+<td>0.760939</td>
+<td>0.756724</td>
+<td>0.755751</td>
+<td>0.823138</td>
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">5</td>
 <td>Boosting Classifier</td>
-<td>0.774386</td>
-<td>0.778912</td>
-<td>0.774386</td>
-<td>0.773572</td>
-<td>0.839513</td>
+<td>0.771021</td>
+<td>0.775760</td>
+<td>0.771021</td>
+<td>0.770138</td>
+<td>0.837449</td>
 </tr>
 </tbody>
 </table>
@@ -7311,16 +7311,63 @@ Name: proportion, dtype: float64</code></pre>
 </section>
 <section id="model-reduction" class="level2">
 <h2 class="anchored" data-anchor-id="model-reduction">Model Reduction</h2>
-<section id="recursive-feature-elimination" class="level3">
-<h3 class="anchored" data-anchor-id="recursive-feature-elimination">Recursive Feature Elimination</h3>
+<section id="selecting-features" class="level3">
+<h3 class="anchored" data-anchor-id="selecting-features">Selecting Features</h3>
+<div id="cell-131" class="cell" data-execution_count="73">
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> roc_auc_score</span>
+<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> custom_auc_roc(X, y):</span>
+<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>    scores <span class="op">=</span> np.zeros(X.shape[<span class="dv">1</span>])</span>
+<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(X.shape[<span class="dv">1</span>]):</span>
+<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a>        scores[i] <span class="op">=</span> roc_auc_score(y, X[:, i])</span>
+<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> scores</span>
+<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a>select_vars_prep_pipeline, select_vars_column_selection  <span class="op">=</span> build_preprocessor_pipeline(X_train, include_columns<span class="op">=</span>X_train.columns.tolist(), score_func<span class="op">=</span>custom_auc_roc, k<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>lr_reduced_pipeline <span class="op">=</span> Pipeline([</span>
+<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'preprocessor'</span>, select_vars_prep_pipeline),</span>
+<span id="cb92-13"><a href="#cb92-13" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'classifier'</span>, lr_estimator.named_steps[<span class="st">'classifier'</span>])</span>
+<span id="cb92-14"><a href="#cb92-14" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb92-15"><a href="#cb92-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-16"><a href="#cb92-16" aria-hidden="true" tabindex="-1"></a>(lr_reduced_estimator,</span>
+<span id="cb92-17"><a href="#cb92-17" aria-hidden="true" tabindex="-1"></a> lr_reduced_params,</span>
+<span id="cb92-18"><a href="#cb92-18" aria-hidden="true" tabindex="-1"></a> lr_reduced_metrics_df,</span>
+<span id="cb92-19"><a href="#cb92-19" aria-hidden="true" tabindex="-1"></a> lr_reduced_roc_curves,</span>
+<span id="cb92-20"><a href="#cb92-20" aria-hidden="true" tabindex="-1"></a> lr_reduced_pr_curves,</span>
+<span id="cb92-21"><a href="#cb92-21" aria-hidden="true" tabindex="-1"></a> lr_reduced_ift_probs,</span>
+<span id="cb92-22"><a href="#cb92-22" aria-hidden="true" tabindex="-1"></a> lr_reduced_true_labels) <span class="op">=</span> cross_validate(lr_reduced_pipeline, select_vars_column_selection, y_train)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Cross-Validation: 100%|██████████| 5/5 [00:02&lt;00:00,  2.06it/s]</code></pre>
+</div>
+</div>
+<div id="cell-132" class="cell" data-execution_count="108">
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>column_mask <span class="op">=</span> lr_reduced_estimator.named_steps[<span class="st">'preprocessor'</span>].named_steps[<span class="st">'select_k_best'</span>].get_support(indices<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>X_train.iloc[:,column_mask].columns</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="108">
+<pre><code>Index(['account_district_n_municipalities_with_inhabitants_500_to_1999',
+       'account_district_n_municipalities_with_inhabitants_2000_to_9999',
+       'withdrawal_month_diff_3', 'withdrawal_month_diff_4',
+       'pre_card_balance_min', 'withdrawal_month_std',
+       'withdrawal_month_median', 'balance_month_std', 'balance_month_median',
+       'credit_month_min', 'withdrawal_first_quarter_std',
+       'withdrawal_first_quarter_max', 'withdrawal_first_quarter_sum',
+       'withdrawal_first_quarter_median', 'withdrawal_last_quarter_mean',
+       'n_transactions_first_quarter_std', 'n_transactions_first_quarter_max',
+       'n_transactions_first_quarter_sum',
+       'n_transactions_first_quarter_median',
+       'n_transactions_last_quarter_mean'],
+      dtype='object')</code></pre>
+</div>
+</div>
 </section>
 </section>
 <section id="model-explanation" class="level2">
 <h2 class="anchored" data-anchor-id="model-explanation">Model Explanation</h2>
-<div id="cell-132" class="cell" data-execution_count="71">
-<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dalex <span class="im">import</span> Explainer</span>
-<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>explainer <span class="op">=</span> Explainer(dt_estimator, X_train[all_vars_column_selection.columns], y_train, label<span class="op">=</span><span class="st">'Decision Tree'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-134" class="cell">
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dalex <span class="im">import</span> Explainer</span>
+<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a>explainer <span class="op">=</span> Explainer(dt_estimator, X_train[all_vars_column_selection.columns], y_train, label<span class="op">=</span><span class="st">'Decision Tree'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Preparation of a new explainer is initiated
 
@@ -7329,20 +7376,20 @@ Name: proportion, dtype: float64</code></pre>
   -&gt; target variable   : 1188 values
   -&gt; model_class       : sklearn.tree._classes.DecisionTreeClassifier (default)
   -&gt; label             : Decision Tree
-  -&gt; predict function  : &lt;function yhat_proba_default at 0x2849b3d80&gt; will be used (default)
+  -&gt; predict function  : &lt;function yhat_proba_default at 0x28456f740&gt; will be used (default)
   -&gt; predict function  : Accepts only pandas.DataFrame, numpy.ndarray causes problems.
-  -&gt; predicted values  : min = 0.0, mean = 0.507, max = 1.0
+  -&gt; predicted values  : min = 0.0, mean = 0.508, max = 1.0
   -&gt; model type        : classification will be used (default)
   -&gt; residual function : difference between y and yhat (default)
-  -&gt; residuals         : min = -1.0, mean = -0.00738, max = 1.0
+  -&gt; residuals         : min = -1.0, mean = -0.00779, max = 0.994
   -&gt; model_info        : package sklearn
 
 A new explainer has been created!</code></pre>
 </div>
 </div>
-<div id="cell-133" class="cell" data-execution_count="72">
-<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>mp_rf <span class="op">=</span> explainer.model_parts(<span class="bu">type</span><span class="op">=</span><span class="st">'variable_importance'</span>, B<span class="op">=</span><span class="dv">10</span>)</span>
-<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>mp_rf.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-135" class="cell">
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>mp_rf <span class="op">=</span> explainer.model_parts(<span class="bu">type</span><span class="op">=</span><span class="st">'variable_importance'</span>, B<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb98-2"><a href="#cb98-2" aria-hidden="true" tabindex="-1"></a>mp_rf.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <pre><code>Unable to display output for mime type(s): application/vnd.plotly.v1+json</code></pre>
 </div>
@@ -7350,28 +7397,28 @@ A new explainer has been created!</code></pre>
 </section>
 <section id="top-customer-lists" class="level2">
 <h2 class="anchored" data-anchor-id="top-customer-lists">Top Customer Lists</h2>
-<div id="cell-135" class="cell" data-execution_count="73">
-<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.plot_utils <span class="im">import</span> plot_model_concordance</span>
-<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a>estimators <span class="op">=</span> [base_estimator, dt_estimator, rf_estimator, bg_estimator]</span>
-<span id="cb96-4"><a href="#cb96-4" aria-hidden="true" tabindex="-1"></a>estimator_names <span class="op">=</span> [<span class="st">'Base'</span>, <span class="st">'DecisionTree'</span>, <span class="st">'RandomForest'</span>, <span class="st">'Bagging'</span>]</span>
-<span id="cb96-5"><a href="#cb96-5" aria-hidden="true" tabindex="-1"></a>non_card_holders <span class="op">=</span> cleaned_client_df[cleaned_client_df[<span class="st">'has_card'</span>] <span class="op">==</span> <span class="va">False</span>].drop(columns<span class="op">=</span><span class="st">'has_card'</span>)</span>
-<span id="cb96-6"><a href="#cb96-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb96-7"><a href="#cb96-7" aria-hidden="true" tabindex="-1"></a>plot_model_concordance(estimators, estimator_names, non_card_holders, p<span class="op">=</span><span class="fl">0.05</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-137" class="cell">
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.plot_utils <span class="im">import</span> plot_model_concordance</span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a>estimators <span class="op">=</span> [base_estimator, lr_estimator, dt_estimator, rf_estimator, bg_estimator]</span>
+<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a>estimator_names <span class="op">=</span> [<span class="st">'Baseline Logistic Regression'</span>, <span class="st">'Logistic Regression'</span>, <span class="st">'Decision Tree'</span>, <span class="st">'Random Forest'</span>, <span class="st">'Bagging Classifier'</span>]</span>
+<span id="cb100-5"><a href="#cb100-5" aria-hidden="true" tabindex="-1"></a>non_card_holders <span class="op">=</span> cleaned_client_df[cleaned_client_df[<span class="st">'has_card'</span>] <span class="op">==</span> <span class="va">False</span>].drop(columns<span class="op">=</span><span class="st">'has_card'</span>)</span>
+<span id="cb100-6"><a href="#cb100-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-7"><a href="#cb100-7" aria-hidden="true" tabindex="-1"></a>plot_model_concordance(estimators, estimator_names, non_card_holders, p<span class="op">=</span><span class="fl">0.05</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="notebook_files/figure-html/cell-74-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="notebook_files/figure-html/cell-76-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="cell-136" class="cell" data-execution_count="74">
-<div class="sourceCode cell-code" id="cb97"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a>plot_model_concordance(estimators, estimator_names, non_card_holders, p<span class="op">=</span><span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-138" class="cell">
+<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>plot_model_concordance(estimators, estimator_names, non_card_holders, p<span class="op">=</span><span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="notebook_files/figure-html/cell-75-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="notebook_files/figure-html/cell-77-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
