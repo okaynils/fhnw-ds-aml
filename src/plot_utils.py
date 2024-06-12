@@ -6,7 +6,7 @@ import seaborn as sns
 import scikitplot as skplt
 from matplotlib.ticker import FuncFormatter
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
-                             f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix, auc)
+                             f1_score, roc_auc_score, roc_curve, precision_recall_curve, confusion_matrix, auc, ConfusionMatrixDisplay)
 
 def get_top_p_percent_predictions(estimator, X, p=0.1):
     probabilities = estimator.predict_proba(X)[:, 1]
@@ -167,6 +167,28 @@ def plot_precision_recall_curve(pr_curves, model_name):
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
     plt.legend(loc='lower left')
+    plt.show()
+
+
+def plot_confusion_matrices(estimators, X_test, y_test, model_names):
+    n_estimators = len(estimators)
+    nrows = (n_estimators + 1) // 2
+    ncols = 2 if n_estimators > 1 else 1
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(15, 5 * nrows))
+
+    axes = axes.flatten() if n_estimators > 1 else [axes]
+    
+    for i, (estimator, model_name) in enumerate(zip(estimators, model_names)):
+        y_pred = estimator.predict(X_test)
+        cm = confusion_matrix(y_test, y_pred)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['No Card', 'Card'])
+        disp.plot(ax=axes[i], cmap='Blues', values_format='d', colorbar=False)
+        axes[i].set_title(f'{model_name} CM')
+        axes[i].grid(False)
+    for j in range(i + 1, len(axes)):
+        fig.delaxes(axes[j])
+    
+    plt.tight_layout()
     plt.show()
 
 
