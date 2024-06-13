@@ -105,7 +105,7 @@ def process_fold(train_index, test_index, X, y, best_estimator, param_grid, grid
 
     return metrics, (fpr, tpr), (precision, recall), y_prob, y_test
 
-def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=1337, n_features_to_select=None):
+def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=1337, n_features_to_select=None, verbose_level=0):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=False)
     
     best_estimator = pipeline
@@ -113,7 +113,7 @@ def cross_validate(pipeline, X, y, n_splits=5, param_grid=None, random_state=133
     
     if n_features_to_select is not None:
         classifier = pipeline.named_steps['classifier']
-        rfe = RFE(estimator=classifier, n_features_to_select=n_features_to_select, step=10)
+        rfe = RFE(estimator=classifier, n_features_to_select=n_features_to_select, step=1, verbose=verbose_level)
         new_pipeline_steps = [(name, step) for name, step in pipeline.steps if name != 'classifier']
         new_pipeline_steps.append(('rfe', rfe))
         new_pipeline_steps.append(('classifier', classifier))

@@ -82,6 +82,34 @@ def plot_metrics(metrics_df, model_name):
     plt.show()
 
 
+def plot_model_evaluation_summary(roc_curves, metrics_mean, best_estimator, X_test, y_test, model_name):
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    
+    for fpr, tpr in roc_curves:
+        ax[0].plot(fpr, tpr, alpha=0.3)
+    mean_fpr = np.linspace(0, 1, 100)
+    mean_tpr = np.mean([np.interp(mean_fpr, fpr, tpr) for fpr, tpr in roc_curves], axis=0)
+    ax[0].plot(mean_fpr, mean_tpr, label=f'{model_name} Mean ROC (area = {metrics_mean["ROC AUC"]:.2f})', color='b')
+    ax[0].plot([0, 1], [0, 1], 'k--')
+    ax[0].set_xlim([0.0, 1.0])
+    ax[0].set_ylim([0.0, 1.05])
+    ax[0].set_xlabel('False Positive Rate')
+    ax[0].set_ylabel('True Positive Rate')
+    ax[0].set_title('Receiver Operating Characteristic')
+    ax[0].legend(loc='lower right')
+    
+    y_pred = best_estimator.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax[1])
+    ax[1].set_xlabel('Predicted Label')
+    ax[1].set_ylabel('True Label')
+    ax[1].set_title(f'{model_name} Confusion Matrix')
+    
+    plt.suptitle(f'Model Evaluation Summary for {model_name}')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+
 def plot_roc_curve(roc_curves, metrics_mean, model_name):
     plt.figure(figsize=(6, 6))
     for fpr, tpr in roc_curves:
@@ -109,6 +137,7 @@ def plot_auc_boxplots(roc_curves_list, model_name_list):
     medianprops = dict(linestyle='-', linewidth=2, color='k')
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.boxplot(auc_values, vert=True, patch_artist=True, tick_labels=model_name_list, medianprops=medianprops)
+    plt.setp(ax.get_xticklabels(), rotation=45)
     ax.set_xlabel('Model')
     ax.set_ylabel('AUC Value')
     ax.set_title('AUC Boxplots for Multiple Estimators')
@@ -193,8 +222,8 @@ def plot_precision_recall_curve(pr_curves, model_name):
 
 def plot_confusion_matrices(estimators, X_test, y_test, model_names):
     n_estimators = len(estimators)
-    nrows = (n_estimators + 1) // 2
-    ncols = 2 if n_estimators > 1 else 1
+    nrows = (n_estimators + 1) // 3
+    ncols = 3 if n_estimators > 1 else 1
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(15, 5 * nrows))
 
     axes = axes.flatten() if n_estimators > 1 else [axes]
