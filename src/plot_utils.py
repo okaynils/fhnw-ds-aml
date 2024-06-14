@@ -147,7 +147,6 @@ def plot_auc_boxplots(roc_curves_list, model_name_list):
 def plot_param_grid_heatmap(grid_search):
     results = pd.DataFrame(grid_search.cv_results_)
 
-    # Select only the relevant columns (params and the score)
     param_columns = [col for col in results.columns if col.startswith('param_')]
     if len(param_columns) != 2:
         raise ValueError("The parameter grid must contain exactly two parameters.")
@@ -159,7 +158,8 @@ def plot_param_grid_heatmap(grid_search):
     
     plt.figure(figsize=(10, 8))
     sns.heatmap(pivot_table, annot=True, cmap="viridis", fmt=".3f")
-    plt.title('Grid Search Scores')
+    plt.suptitle('Grid Search Scores')
+    plt.title(f'AUC Scores for {param1} and {param2}')
     plt.xlabel(param2)
     plt.ylabel(param1)
     plt.show()
